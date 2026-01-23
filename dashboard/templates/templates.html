@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Templates - CITYARRAY Festival{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Message Templates</h2><button class="btn btn-primary" onclick="openTemplateModal()">+ New Template</button></div>
+    {% if templates %}
+    <div class="grid grid-3">
+        {% for tpl in templates %}
+        <div class="card" style="margin: 0;">
+            <div class="flex flex-between flex-center mb-1">
+                <strong>{{ tpl.name }}</strong>
+                <span style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--gray-200); border-radius: 4px;">{{ tpl.category or 'general' }}</span>
+            </div>
+            <div class="message-preview" style="font-size: 0.875rem; padding: 0.75rem;">{{ tpl.content }}</div>
+            <div class="flex gap-1 mt-2">
+                <button class="btn btn-outline" onclick="useTemplate('{{ tpl.id }}')" style="flex: 1;">Use</button>
+                <button class="btn btn-outline" onclick="editTemplate('{{ tpl.id }}')" style="flex: 1;">Edit</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📝</p><p>No templates yet.</p></div>
+    {% endif %}
+</div>
+
+<div id="template-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
+        <div class="card-header"><h2 class="card-title" id="template-modal-title">📝 New Template</h2><button onclick="closeTemplateModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+        <form id="template-form">
+            <input type="hidden" name="id" id="template-id">
+            <div class="form-group"><label class="form-label">Name</label><input type="text" name="name" id="template-name" class="form-input" required></div>
+            <div class="form-group"><label class="form-label">Category</label><select name="category" id="template-category" class="form-select"><option value="emergency">🚨 Emergency</option><option value="wayfinding">🧭 Wayfinding</option><option value="crowd">👥 Crowd</option><option value="weather">⛈️ Weather</option><option value="schedule">📅 Schedule</option><option value="general">📋 General</option></select></div>
+            <div class="form-group"><label class="form-label">Content</label><textarea name="content" id="template-content" class="form-textarea" required></textarea></div>
+            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeTemplateModal()">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openTemplateModal() { document.getElementById('template-modal-title').textContent = '📝 New Template'; document.getElementById('template-form').reset(); document.getElementById('template-id').value = ''; document.getElementById('template-modal').style.display = 'flex'; }
+function closeTemplateModal() { document.getElementById('template-modal').style.display = 'none'; }
+function useTemplate(id) { fetch('/api/templates/' + id).then(r => r.json()).then(tpl => { window.location.href = '/messages?content=' + encodeURIComponent(tpl.content); }); }
+function editTemplate(id) {
+    fetch('/api/templates/' + id).then(r => r.json()).then(tpl => {
+        document.getElementById('template-modal-title').textContent = '✏️ Edit Template';
+        document.getElementById('template-id').value = tpl.id;
+        document.getElementById('template-name').value = tpl.name;
+        document.getElementById('template-category').value = tpl.category || 'general';
+        document.getElementById('template-content').value = tpl.content;
+        document.getElementById('template-modal').style.display = 'flex';
+    });
+}
+document.getElementById('template-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const id = formData.get('id');
+    const data = { name: formData.get('name'), category: formData.get('category'), content: formData.get('content') };
+    if (id) { await fetch('/api/templates/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); }
+    else { await fetch('/api/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); }
+    closeTemplateModal(); location.reload();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTemplateModal(); });
+</script>
+{% endblock %}

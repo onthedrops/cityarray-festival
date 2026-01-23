@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Messages - CITYARRAY Festival{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Message History</h2><button class="btn btn-primary" onclick="openMessageModal()">+ New Message</button></div>
+    {% if messages %}
+    <table class="table">
+        <thead><tr><th>Time</th><th>Content</th><th>Priority</th><th>Status</th><th>Targets</th></tr></thead>
+        <tbody>
+            {% for msg in messages %}
+            <tr>
+                <td>{{ msg.created_at[:16] if msg.created_at else '-' }}</td>
+                <td>{{ msg.content[:60] }}{% if msg.content|length > 60 %}...{% endif %}</td>
+                <td>{% if msg.priority == 'emergency' %}<span style="color: var(--danger);">🚨 Emergency</span>{% elif msg.priority == 'high' %}<span style="color: var(--warning);">⚠️ High</span>{% else %}Normal{% endif %}</td>
+                <td>{{ msg.status }}</td>
+                <td>{% if msg.target_signs %}{% if 'all' in msg.target_signs %}All{% else %}{{ msg.target_signs|length }} sign(s){% endif %}{% else %}-{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📭</p><p>No messages sent yet.</p></div>
+    {% endif %}
+</div>
+
+<div id="message-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
+        <div class="card-header"><h2 class="card-title">📢 Send Message</h2><button onclick="closeMessageModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+        <form id="message-form">
+            <div class="form-group"><label class="form-label">Message Content</label><textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea></div>
+            <div class="form-group"><label class="form-label">Priority</label><select name="priority" class="form-select"><option value="normal">Normal</option><option value="high">High</option><option value="emergency">Emergency</option></select></div>
+            <div class="message-preview" id="message-preview">MESSAGE PREVIEW</div>
+            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button><button type="submit" class="btn btn-primary">Send Message</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openMessageModal() { document.getElementById('message-modal').style.display = 'flex'; }
+function closeMessageModal() { document.getElementById('message-modal').style.display = 'none'; }
+document.getElementById('message-content').addEventListener('input', function() { document.getElementById('message-preview').textContent = this.value || 'MESSAGE PREVIEW'; });
+document.getElementById('message-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), priority: formData.get('priority'), target_signs: ['all'] }) });
+    closeMessageModal(); location.reload();
+});
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeMessageModal(); });
+</script>
+{% endblock %}

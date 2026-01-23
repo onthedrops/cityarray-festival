@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Submissions - CITYARRAY Festival{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Attendee Submissions</h2>
+        <div class="flex gap-1">
+            <a href="/submissions" class="btn {% if not filter_status %}btn-primary{% else %}btn-outline{% endif %}">All</a>
+            <a href="/submissions?status=pending" class="btn {% if filter_status == 'pending' %}btn-primary{% else %}btn-outline{% endif %}">Pending</a>
+            <a href="/submissions?status=approved" class="btn {% if filter_status == 'approved' %}btn-primary{% else %}btn-outline{% endif %}">Approved</a>
+            <a href="/submissions?status=rejected" class="btn {% if filter_status == 'rejected' %}btn-primary{% else %}btn-outline{% endif %}">Rejected</a>
+        </div>
+    </div>
+    {% if submissions %}
+    <div class="grid grid-2">
+        {% for sub in submissions %}
+        <div class="card" style="margin: 0; border-left: 4px solid {% if sub.status == 'pending' %}var(--warning){% elif sub.status == 'approved' %}var(--success){% else %}var(--danger){% endif %};">
+            <div class="flex flex-between flex-center mb-1">
+                <span style="font-size: 0.75rem; color: var(--gray-600);">{{ sub.created_at[:16] if sub.created_at else '-' }}</span>
+                <span style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: var(--gray-200); border-radius: 4px;">{{ sub.category or 'message' }}</span>
+            </div>
+            <div class="message-preview" style="font-size: 1rem; padding: 1rem; margin: 0.5rem 0;">{{ sub.content }}</div>
+            {% if sub.sender_name %}<div style="font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem;">From: {{ sub.sender_name }}</div>{% endif %}
+            {% if sub.status == 'pending' %}
+            <div class="flex gap-1">
+                <button class="btn btn-success" onclick="approveSubmission('{{ sub.id }}')" style="flex: 1;">✓ Approve</button>
+                <button class="btn btn-danger" onclick="rejectSubmission('{{ sub.id }}')" style="flex: 1;">✗ Reject</button>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 0.5rem; background: var(--gray-100); border-radius: 4px;">{% if sub.status == 'approved' %}✓ Approved{% else %}✗ Rejected{% endif %}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📬</p><p>No submissions{% if filter_status %} with status "{{ filter_status }}"{% endif %}.</p></div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header"><h2 class="card-title">🧪 Test: Create Submission</h2></div>
+    <form id="test-submission-form">
+        <div class="grid grid-2">
+            <div class="form-group"><label class="form-label">Sender Name</label><input type="text" name="sender_name" class="form-input" placeholder="John Doe"></div>
+            <div class="form-group"><label class="form-label">Category</label><select name="category" class="form-select"><option value="shoutout">📣 Shoutout</option><option value="lost_found">🔍 Lost & Found</option><option value="question">❓ Question</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Message</label><textarea name="content" class="form-textarea" placeholder="Enter submission content..." required></textarea></div>
+        <button type="submit" class="btn btn-primary">Submit Test Message</button>
+    </form>
+</div>
+
+<script>
+async function approveSubmission(id) { await fetch('/api/submissions/' + id + '/approve', { method: 'POST' }); location.reload(); }
+async function rejectSubmission(id) { const reason = prompt('Rejection reason (optional):'); await fetch('/api/submissions/' + id + '/reject?reason=' + encodeURIComponent(reason || ''), { method: 'POST' }); location.reload(); }
+document.getElementById('test-submission-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    await fetch('/api/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sender_name: formData.get('sender_name'), category: formData.get('category'), content: formData.get('content') }) });
+    this.reset(); location.reload();
+});
+</script>
+{% endblock %}

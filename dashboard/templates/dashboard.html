@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - CITYARRAY Festival{% endblock %}
+
+{% block content %}
+<div class="grid grid-4 mb-2">
+    <div class="card"><div class="stat"><div class="stat-value" id="stat-online">{{ stats.signs.online }}</div><div class="stat-label">Signs Online</div></div></div>
+    <div class="card"><div class="stat"><div class="stat-value" id="stat-offline">{{ stats.signs.offline }}</div><div class="stat-label">Signs Offline</div></div></div>
+    <div class="card"><div class="stat"><div class="stat-value" id="stat-pending">{{ stats.submissions.pending }}</div><div class="stat-label">Pending Submissions</div></div></div>
+    <div class="card"><div class="stat"><div class="stat-value">{{ stats.signs.total }}</div><div class="stat-label">Total Signs</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Quick Actions</h2></div>
+    <div class="flex gap-2">
+        <button class="btn btn-danger" onclick="openOverrideModal()">⚠️ Send Override</button>
+        <button class="btn btn-primary" onclick="openMessageModal()">📢 Send Message</button>
+        <a href="/submissions?status=pending" class="btn btn-outline">📝 Review Submissions ({{ stats.submissions.pending }})</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Sign Fleet</h2><a href="/signs" class="btn btn-outline">View All →</a></div>
+    {% if signs %}
+    <div class="grid grid-4" id="signs-grid">
+        {% for sign in signs %}
+        <div class="sign-card {{ sign.status }}" data-sign-id="{{ sign.id }}">
+            <div class="sign-header"><span class="sign-name">{{ sign.name }}</span><span class="sign-status {{ sign.status }}">{{ sign.status }}</span></div>
+            <div class="sign-metrics">
+                <div class="sign-metric"><span class="sign-metric-label">🔋 Battery</span><span class="sign-metric-value">{{ sign.battery or 0 }}%</span></div>
+                <div class="sign-metric"><span class="sign-metric-label">📶 Signal</span><span class="sign-metric-value">{{ sign.signal_strength or 0 }}%</span></div>
+                <div class="sign-metric"><span class="sign-metric-label">👥 Count</span><span class="sign-metric-value">{{ sign.crowd_count or 0 }}</span></div>
+                <div class="sign-metric"><span class="sign-metric-label">📊 Density</span><span class="sign-metric-value">{{ sign.crowd_density or 0 }}/m²</span></div>
+            </div>
+            <div class="mt-2"><small style="color: var(--gray-600);">{{ sign.zone or 'Unassigned' }}</small></div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📡</p><p>No signs registered yet.</p><p class="mt-2"><a href="/simulator" class="btn btn-primary">Launch Simulator</a></p></div>
+    {% endif %}
+</div>
+
+<div id="override-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
+        <div class="card-header"><h2 class="card-title">🚨 Send Override Message</h2><button onclick="closeOverrideModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+        <form id="override-form">
+            <div class="form-group"><label class="form-label">Priority</label><select name="priority" class="form-select"><option value="high">⚠️ High</option><option value="emergency">🚨 Emergency</option></select></div>
+            <div class="form-group"><label class="form-label">Message</label><textarea name="content" class="form-textarea" placeholder="Enter override message..." required></textarea></div>
+            <div class="message-preview" id="override-preview">OVERRIDE MESSAGE PREVIEW</div>
+            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeOverrideModal()">Cancel</button><button type="submit" class="btn btn-danger">Send Override</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="message-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
+        <div class="card-header"><h2 class="card-title">📢 Send Message</h2><button onclick="closeMessageModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+        <form id="message-form">
+            <div class="form-group"><label class="form-label">Message Content</label><textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea></div>
+            <div class="message-preview" id="message-preview">MESSAGE PREVIEW</div>
+            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button><button type="submit" class="btn btn-primary">Send Message</button></div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openOverrideModal() { document.getElementById('override-modal').style.display = 'flex'; }
+function closeOverrideModal() { document.getElementById('override-modal').style.display = 'none'; }
+function openMessageModal() { document.getElementById('message-modal').style.display = 'flex'; }
+function closeMessageModal() { document.getElementById('message-modal').style.display = 'none'; }
+
+document.querySelector('#override-form textarea')?.addEventListener('input', function() { document.getElementById('override-preview').textContent = this.value || 'OVERRIDE MESSAGE PREVIEW'; });
+document.getElementById('message-content')?.addEventListener('input', function() { document.getElementById('message-preview').textContent = this.value || 'MESSAGE PREVIEW'; });
+
+document.getElementById('override-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    await fetch('/api/override', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), priority: formData.get('priority') }) });
+    closeOverrideModal(); this.reset();
+});
+
+document.getElementById('message-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), target_signs: ['all'] }) });
+    closeMessageModal(); this.reset();
+});
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeOverrideModal(); closeMessageModal(); } });
+</script>
+{% endblock %}

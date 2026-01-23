@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Signs - CITYARRAY Festival{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Sign Fleet</h2><a href="/simulator" class="btn btn-primary">+ Add Simulated Sign</a></div>
+    {% if signs %}
+    <table class="table">
+        <thead><tr><th>Name</th><th>Zone</th><th>Status</th><th>Battery</th><th>Signal</th><th>Crowd</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for sign in signs %}
+            <tr data-sign-id="{{ sign.id }}">
+                <td><strong>{{ sign.name }}</strong><br><small style="color: var(--gray-600);">{{ sign.id[:8] }}...</small></td>
+                <td>{{ sign.zone or '-' }}</td>
+                <td><span class="sign-status {{ sign.status }}">{{ sign.status }}</span></td>
+                <td>{{ sign.battery or 0 }}%</td>
+                <td>{{ sign.signal_strength or 0 }}%</td>
+                <td>{{ sign.crowd_count or 0 }}</td>
+                <td><button class="btn btn-outline" onclick="sendToSign('{{ sign.id }}')">Send Message</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📡</p><p>No signs registered yet.</p><p class="mt-2"><a href="/simulator" class="btn btn-primary">Launch Simulator</a></p></div>
+    {% endif %}
+</div>
+
+<script>
+function sendToSign(signId) {
+    const content = prompt('Enter message to send to this sign:');
+    if (content) {
+        fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: content, target_signs: [signId], priority: 'normal' }) }).then(() => alert('Message sent!'));
+    }
+}
+</script>
+{% endblock %}
