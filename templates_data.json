@@ -1,0 +1,565 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "languages": ["en", "es", "fr", "zh", "vi"],
+    "total_templates": 315,
+    "categories": {
+      "emergency": 60,
+      "weather": 55,
+      "crowd": 50,
+      "schedule": 50,
+      "wayfinding": 50,
+      "sponsor": 30,
+      "attendee": 10,
+      "general": 10
+    }
+  },
+  "templates": [
+    {
+      "name": "Emergency Evacuation - General",
+      "category": "emergency",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "EMERGENCY EVACUATION. Leave the area immediately. Follow staff directions to nearest exit.",
+        "es": "EVACUACIÓN DE EMERGENCIA. Abandone el área inmediatamente. Siga las instrucciones del personal hacia la salida más cercana.",
+        "fr": "ÉVACUATION D'URGENCE. Quittez la zone immédiatement. Suivez les instructions du personnel vers la sortie la plus proche.",
+        "zh": "紧急疏散。请立即离开该区域。按照工作人员指示前往最近的出口。",
+        "vi": "SƠ TÁN KHẨN CẤP. Rời khỏi khu vực ngay lập tức. Làm theo hướng dẫn của nhân viên đến lối thoát gần nhất."
+      }
+    },
+    {
+      "name": "Emergency Evacuation - With Exit",
+      "category": "emergency",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": ["exit_name"],
+      "content": {
+        "en": "EMERGENCY EVACUATION. Proceed to {exit_name}. Do not run. Follow staff directions.",
+        "es": "EVACUACIÓN DE EMERGENCIA. Diríjase a {exit_name}. No corra. Siga las instrucciones del personal.",
+        "fr": "ÉVACUATION D'URGENCE. Dirigez-vous vers {exit_name}. Ne courez pas. Suivez les instructions du personnel.",
+        "zh": "紧急疏散。请前往{exit_name}。不要奔跑。按照工作人员指示行动。",
+        "vi": "SƠ TÁN KHẨN CẤP. Đi đến {exit_name}. Không chạy. Làm theo hướng dẫn của nhân viên."
+      }
+    },
+    {
+      "name": "Emergency Evacuation - Fire",
+      "category": "emergency",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "FIRE EMERGENCY. Evacuate immediately. Do not use elevators. Move to designated assembly areas.",
+        "es": "EMERGENCIA DE INCENDIO. Evacue inmediatamente. No use ascensores. Diríjase a las áreas de reunión designadas.",
+        "fr": "URGENCE INCENDIE. Évacuez immédiatement. N'utilisez pas les ascenseurs. Rendez-vous aux points de rassemblement.",
+        "zh": "火灾紧急情况。立即撤离。不要使用电梯。前往指定集合区域。",
+        "vi": "CHÁY KHẨN CẤP. Sơ tán ngay lập tức. Không sử dụng thang máy. Di chuyển đến khu vực tập trung được chỉ định."
+      }
+    },
+    {
+      "name": "Shelter in Place - General",
+      "category": "emergency",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "SHELTER IN PLACE. Remain where you are. Do not leave the area. Await further instructions.",
+        "es": "REFUGIO EN EL LUGAR. Permanezca donde está. No abandone el área. Espere más instrucciones.",
+        "fr": "CONFINEMENT. Restez où vous êtes. Ne quittez pas la zone. Attendez d'autres instructions.",
+        "zh": "就地避难。留在原地。不要离开该区域。等待进一步指示。",
+        "vi": "TẠI CHỖ TRÚ ẨN. Ở nguyên vị trí của bạn. Không rời khỏi khu vực. Chờ hướng dẫn thêm."
+      }
+    },
+    {
+      "name": "Shelter in Place - Severe Weather",
+      "category": "emergency",
+      "priority": 95,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "SEVERE WEATHER SHELTER. Move to nearest covered structure immediately. Stay away from windows.",
+        "es": "REFUGIO POR CLIMA SEVERO. Muévase a la estructura cubierta más cercana inmediatamente. Aléjese de las ventanas.",
+        "fr": "ABRI INTEMPÉRIES. Dirigez-vous immédiatement vers la structure couverte la plus proche. Éloignez-vous des fenêtres.",
+        "zh": "恶劣天气避难。立即前往最近的有顶建筑。远离窗户。",
+        "vi": "TRÚ ẨN THỜI TIẾT KHẮC NGHIỆT. Di chuyển đến công trình có mái che gần nhất ngay lập tức. Tránh xa cửa sổ."
+      }
+    },
+    {
+      "name": "Shelter in Place - Active Threat",
+      "category": "emergency",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "SECURITY ALERT. Shelter in place. Lock doors if possible. Stay quiet and out of sight. Silence phones.",
+        "es": "ALERTA DE SEGURIDAD. Refugio en el lugar. Cierre puertas si es posible. Permanezca en silencio y fuera de vista. Silencie teléfonos.",
+        "fr": "ALERTE SÉCURITÉ. Confinement. Verrouillez les portes si possible. Restez silencieux et hors de vue. Téléphones en silencieux.",
+        "zh": "安全警报。就地避难。如果可能，锁上门。保持安静，不要暴露。手机静音。",
+        "vi": "CẢNH BÁO AN NINH. Tại chỗ trú ẩn. Khóa cửa nếu có thể. Giữ yên lặng và tránh bị nhìn thấy. Tắt tiếng điện thoại."
+      }
+    },
+    {
+      "name": "Medical Emergency - General",
+      "category": "emergency",
+      "priority": 90,
+      "audio_enabled": true,
+      "variables": ["location"],
+      "content": {
+        "en": "MEDICAL EMERGENCY in progress. Clear the area for emergency responders. First aid station at {location}.",
+        "es": "EMERGENCIA MÉDICA en curso. Despeje el área para los equipos de emergencia. Estación de primeros auxilios en {location}.",
+        "fr": "URGENCE MÉDICALE en cours. Dégagez la zone pour les secours. Poste de premiers soins à {location}.",
+        "zh": "医疗紧急情况正在处理。请为急救人员清出通道。急救站位于{location}。",
+        "vi": "KHẨN CẤP Y TẾ đang diễn ra. Giải tỏa khu vực cho nhân viên cấp cứu. Trạm sơ cứu tại {location}."
+      }
+    },
+    {
+      "name": "Medical - First Aid Location",
+      "category": "emergency",
+      "priority": 50,
+      "audio_enabled": false,
+      "variables": ["locations"],
+      "content": {
+        "en": "Need medical help? First aid stations located at: {locations}. For emergencies, find nearest staff member.",
+        "es": "¿Necesita ayuda médica? Estaciones de primeros auxilios en: {locations}. Para emergencias, busque al personal más cercano.",
+        "fr": "Besoin d'aide médicale? Postes de premiers soins situés à: {locations}. En cas d'urgence, trouvez le personnel le plus proche.",
+        "zh": "需要医疗帮助？急救站位于：{locations}。紧急情况请找最近的工作人员。",
+        "vi": "Cần trợ giúp y tế? Trạm sơ cứu tại: {locations}. Trường hợp khẩn cấp, tìm nhân viên gần nhất."
+      }
+    },
+    {
+      "name": "Medical - Heat Emergency",
+      "category": "emergency",
+      "priority": 85,
+      "audio_enabled": true,
+      "variables": ["locations"],
+      "content": {
+        "en": "HEAT EMERGENCY. Cooling stations at {locations}. Signs of heat stroke: confusion, no sweating, rapid pulse. Seek help immediately.",
+        "es": "EMERGENCIA POR CALOR. Estaciones de enfriamiento en {locations}. Signos de insolación: confusión, sin sudor, pulso rápido. Busque ayuda inmediatamente.",
+        "fr": "URGENCE CHALEUR. Stations de rafraîchissement à {locations}. Signes de coup de chaleur: confusion, absence de transpiration, pouls rapide. Cherchez de l'aide immédiatement.",
+        "zh": "高温紧急情况。降温站位于{locations}。中暑症状：意识混乱、不出汗、脉搏快。请立即寻求帮助。",
+        "vi": "KHẨN CẤP NÓNG. Trạm làm mát tại {locations}. Dấu hiệu say nắng: lú lẫn, không đổ mồ hôi, mạch nhanh. Tìm kiếm trợ giúp ngay lập tức."
+      }
+    },
+    {
+      "name": "Security - General Alert",
+      "category": "emergency",
+      "priority": 85,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "SECURITY ALERT. Remain calm and follow staff instructions. Security personnel responding.",
+        "es": "ALERTA DE SEGURIDAD. Mantenga la calma y siga las instrucciones del personal. Personal de seguridad respondiendo.",
+        "fr": "ALERTE SÉCURITÉ. Restez calme et suivez les instructions du personnel. Personnel de sécurité en intervention.",
+        "zh": "安全警报。请保持冷静并遵循工作人员指示。安保人员正在响应。",
+        "vi": "CẢNH BÁO AN NINH. Giữ bình tĩnh và làm theo hướng dẫn của nhân viên. Nhân viên an ninh đang phản ứng."
+      }
+    },
+    {
+      "name": "Security - Lost Child",
+      "category": "emergency",
+      "priority": 90,
+      "audio_enabled": true,
+      "variables": ["description", "location"],
+      "content": {
+        "en": "LOST CHILD ALERT: {description}. Last seen at {location}. Please report any sightings to nearest staff or security.",
+        "es": "ALERTA NIÑO PERDIDO: {description}. Visto por última vez en {location}. Reporte cualquier avistamiento al personal o seguridad más cercano.",
+        "fr": "ALERTE ENFANT PERDU: {description}. Vu pour la dernière fois à {location}. Signalez toute observation au personnel ou à la sécurité.",
+        "zh": "儿童走失警报：{description}。最后出现在{location}。如有发现请告知最近的工作人员或安保人员。",
+        "vi": "CẢNH BÁO TRẺ LẠC: {description}. Nhìn thấy lần cuối tại {location}. Vui lòng báo cáo cho nhân viên hoặc an ninh gần nhất."
+      }
+    },
+    {
+      "name": "Security - All Clear",
+      "category": "emergency",
+      "priority": 70,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "ALL CLEAR. Security situation resolved. Normal operations resuming. Thank you for your patience.",
+        "es": "TODO DESPEJADO. Situación de seguridad resuelta. Operaciones normales reanudando. Gracias por su paciencia.",
+        "fr": "SITUATION RÉSOLUE. Incident de sécurité terminé. Reprise des opérations normales. Merci de votre patience.",
+        "zh": "警报解除。安全情况已解决。恢复正常运营。感谢您的耐心。",
+        "vi": "GIẢI TỎA. Tình huống an ninh đã được giải quyết. Hoạt động bình thường tiếp tục. Cảm ơn sự kiên nhẫn của bạn."
+      }
+    },
+    {
+      "name": "Weather - Lightning Warning",
+      "category": "weather",
+      "priority": 90,
+      "audio_enabled": true,
+      "variables": ["distance"],
+      "content": {
+        "en": "⚡ LIGHTNING DETECTED within {distance} miles. Seek shelter in enclosed buildings or vehicles. Avoid open areas, tall objects, water.",
+        "es": "⚡ RELÁMPAGO DETECTADO a {distance} millas. Busque refugio en edificios cerrados o vehículos. Evite áreas abiertas, objetos altos, agua.",
+        "fr": "⚡ FOUDRE DÉTECTÉE à {distance} miles. Abritez-vous dans des bâtiments fermés ou véhicules. Évitez zones ouvertes, objets hauts, eau.",
+        "zh": "⚡ 检测到{distance}英里内有闪电。请在封闭建筑或车辆中避难。避免开阔区域、高大物体和水域。",
+        "vi": "⚡ PHÁT HIỆN SÉT trong {distance} dặm. Tìm nơi trú ẩn trong tòa nhà kín hoặc xe. Tránh khu vực trống, vật cao, nước."
+      }
+    },
+    {
+      "name": "Weather - Lightning All Clear",
+      "category": "weather",
+      "priority": 70,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "⚡ LIGHTNING ALL CLEAR. No lightning detected for 30+ minutes. Outdoor activities may resume. Stay weather aware.",
+        "es": "⚡ RELÁMPAGO DESPEJADO. Sin relámpagos detectados por más de 30 minutos. Las actividades al aire libre pueden reanudarse.",
+        "fr": "⚡ FIN D'ALERTE FOUDRE. Pas de foudre détectée depuis 30+ minutes. Les activités extérieures peuvent reprendre.",
+        "zh": "⚡ 闪电警报解除。30分钟以上未检测到闪电。户外活动可以恢复。",
+        "vi": "⚡ GIẢI TỎA SÉT. Không phát hiện sét trong hơn 30 phút. Hoạt động ngoài trời có thể tiếp tục."
+      }
+    },
+    {
+      "name": "Weather - Severe Thunderstorm",
+      "category": "weather",
+      "priority": 95,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "⛈️ SEVERE THUNDERSTORM WARNING. Damaging winds and large hail possible. Seek shelter immediately. Outdoor stages may close.",
+        "es": "⛈️ ADVERTENCIA DE TORMENTA SEVERA. Vientos dañinos y granizo grande posibles. Busque refugio inmediatamente.",
+        "fr": "⛈️ ALERTE ORAGE VIOLENT. Vents destructeurs et grosse grêle possibles. Abritez-vous immédiatement.",
+        "zh": "⛈️ 强雷暴警告。可能出现破坏性大风和大冰雹。请立即避难。",
+        "vi": "⛈️ CẢNH BÁO GIÔNG BÃO NGHIÊM TRỌNG. Gió gây thiệt hại và mưa đá lớn có thể xảy ra. Tìm nơi trú ẩn ngay."
+      }
+    },
+    {
+      "name": "Weather - Heat Advisory",
+      "category": "weather",
+      "priority": 70,
+      "audio_enabled": true,
+      "variables": ["temp"],
+      "content": {
+        "en": "🌡️ HEAT ADVISORY: Temperature {temp}°F. Drink water frequently. Rest in shade. Know signs of heat illness.",
+        "es": "🌡️ AVISO DE CALOR: Temperatura {temp}°F. Beba agua frecuentemente. Descanse en la sombra.",
+        "fr": "🌡️ AVIS DE CHALEUR: Température {temp}°F. Buvez fréquemment. Reposez-vous à l'ombre.",
+        "zh": "🌡️ 高温预警：温度{temp}°F。请经常饮水。在阴凉处休息。",
+        "vi": "🌡️ KHUYẾN CÁO NÓNG: Nhiệt độ {temp}°F. Uống nước thường xuyên. Nghỉ ngơi trong bóng râm."
+      }
+    },
+    {
+      "name": "Weather - Rain Expected",
+      "category": "weather",
+      "priority": 40,
+      "audio_enabled": false,
+      "variables": ["time", "locations"],
+      "content": {
+        "en": "🌧️ RAIN EXPECTED starting at {time}. Ponchos available at merchandise stands. Covered areas: {locations}. Show will continue.",
+        "es": "🌧️ LLUVIA ESPERADA comenzando a las {time}. Ponchos disponibles en puestos. Áreas cubiertas: {locations}.",
+        "fr": "🌧️ PLUIE ATTENDUE à partir de {time}. Ponchos disponibles aux stands. Zones couvertes: {locations}.",
+        "zh": "🌧️ 预计{time}开始下雨。商品摊位有雨衣出售。有顶区域：{locations}。",
+        "vi": "🌧️ DỰ KIẾN MƯA bắt đầu lúc {time}. Áo mưa có sẵn tại quầy hàng. Khu vực có mái che: {locations}."
+      }
+    },
+    {
+      "name": "Weather - Rain Delay",
+      "category": "weather",
+      "priority": 75,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "🌧️ RAIN DELAY. Performances paused for safety. Seek covered areas. Updates every 15 minutes. Show will resume.",
+        "es": "🌧️ RETRASO POR LLUVIA. Presentaciones pausadas por seguridad. Busque áreas cubiertas. El show continuará.",
+        "fr": "🌧️ INTERRUPTION PLUIE. Spectacles suspendus pour sécurité. Rejoignez les zones couvertes. Reprise prévue.",
+        "zh": "🌧️ 雨天延误。出于安全考虑演出暂停。请前往有顶区域。演出将恢复。",
+        "vi": "🌧️ HOÃN VÌ MƯA. Biểu diễn tạm dừng vì an toàn. Tìm khu vực có mái che. Chương trình sẽ tiếp tục."
+      }
+    },
+    {
+      "name": "Crowd - Area at Capacity",
+      "category": "crowd",
+      "priority": 80,
+      "audio_enabled": true,
+      "variables": ["area_name", "alternate_areas"],
+      "content": {
+        "en": "🚫 {area_name} AT CAPACITY. Entry paused. Please enjoy other areas - {alternate_areas} have space.",
+        "es": "🚫 {area_name} A CAPACIDAD. Entrada pausada. Disfrute otras áreas - {alternate_areas} tienen espacio.",
+        "fr": "🚫 {area_name} À CAPACITÉ. Entrée suspendue. Profitez d'autres zones - {alternate_areas} ont de la place.",
+        "zh": "🚫 {area_name}已满。暂停入场。请前往其他区域 - {alternate_areas}仍有空位。",
+        "vi": "🚫 {area_name} ĐÃ ĐẦY. Tạm dừng vào. Hãy tận hưởng khu vực khác - {alternate_areas} còn chỗ."
+      }
+    },
+    {
+      "name": "Crowd - Density High",
+      "category": "crowd",
+      "priority": 85,
+      "audio_enabled": true,
+      "variables": ["area_name"],
+      "content": {
+        "en": "⚠️ CROWD DENSITY HIGH in {area_name}. Move carefully. Keep arms at sides. If feeling crushed, move diagonally toward edges.",
+        "es": "⚠️ DENSIDAD DE MULTITUD ALTA en {area_name}. Muévase con cuidado. Mantenga brazos a los lados.",
+        "fr": "⚠️ FORTE DENSITÉ DE FOULE à {area_name}. Déplacez-vous prudemment. Gardez les bras le long du corps.",
+        "zh": "⚠️ {area_name}人群密度高。请小心移动。手臂贴身。如感到拥挤，请斜向移动至边缘。",
+        "vi": "⚠️ MẬT ĐỘ CAO tại {area_name}. Di chuyển cẩn thận. Giữ tay sát người."
+      }
+    },
+    {
+      "name": "Crowd - Surge Warning",
+      "category": "crowd",
+      "priority": 100,
+      "audio_enabled": true,
+      "variables": [],
+      "content": {
+        "en": "🚨 CROWD SURGE ALERT. STOP PUSHING. Create space around you. If you fall, curl into ball protecting head.",
+        "es": "🚨 ALERTA DE AVALANCHA HUMANA. DEJE DE EMPUJAR. Cree espacio a su alrededor.",
+        "fr": "🚨 ALERTE MOUVEMENT DE FOULE. ARRÊTEZ DE POUSSER. Créez de l'espace autour de vous.",
+        "zh": "🚨 人群涌动警报。停止推搡。在周围创造空间。如跌倒，蜷缩保护头部。",
+        "vi": "🚨 CẢNH BÁO CHEN LẤN. NGỪNG ĐẨY. Tạo không gian xung quanh bạn."
+      }
+    },
+    {
+      "name": "Schedule - Now Playing",
+      "category": "schedule",
+      "priority": 30,
+      "audio_enabled": false,
+      "variables": ["stage_name", "artist_name", "end_time", "next_artist", "next_time"],
+      "content": {
+        "en": "🎵 NOW PLAYING at {stage_name}: {artist_name}. Set ends at {end_time}. Next up: {next_artist} at {next_time}.",
+        "es": "🎵 AHORA EN {stage_name}: {artist_name}. Set termina a las {end_time}. Siguiente: {next_artist} a las {next_time}.",
+        "fr": "🎵 EN COURS à {stage_name}: {artist_name}. Fin du set à {end_time}. Ensuite: {next_artist} à {next_time}.",
+        "zh": "🎵 {stage_name}正在演出：{artist_name}。演出于{end_time}结束。下一位：{next_artist}，{next_time}开始。",
+        "vi": "🎵 ĐANG DIỄN tại {stage_name}: {artist_name}. Kết thúc lúc {end_time}. Tiếp theo: {next_artist} lúc {next_time}."
+      }
+    },
+    {
+      "name": "Schedule - Starting Soon",
+      "category": "schedule",
+      "priority": 45,
+      "audio_enabled": true,
+      "variables": ["minutes", "artist_name", "stage_name"],
+      "content": {
+        "en": "⏰ STARTING IN {minutes} MINUTES: {artist_name} at {stage_name}. Head over now for best spots!",
+        "es": "⏰ COMIENZA EN {minutes} MINUTOS: {artist_name} en {stage_name}. ¡Vaya ahora para los mejores lugares!",
+        "fr": "⏰ DÉBUT DANS {minutes} MINUTES: {artist_name} à {stage_name}. Allez-y maintenant pour les meilleures places!",
+        "zh": "⏰ {minutes}分钟后开始：{artist_name}在{stage_name}。现在前往可获得好位置！",
+        "vi": "⏰ BẮT ĐẦU TRONG {minutes} PHÚT: {artist_name} tại {stage_name}. Đến ngay để có vị trí tốt!"
+      }
+    },
+    {
+      "name": "Schedule - Set Time Change",
+      "category": "schedule",
+      "priority": 65,
+      "audio_enabled": true,
+      "variables": ["artist_name", "new_time", "old_time", "stage_name"],
+      "content": {
+        "en": "📢 SCHEDULE CHANGE: {artist_name} now performing at {new_time} (was {old_time}). Stage: {stage_name}.",
+        "es": "📢 CAMBIO DE HORARIO: {artist_name} ahora actúa a las {new_time} (era {old_time}). Escenario: {stage_name}.",
+        "fr": "📢 CHANGEMENT D'HORAIRE: {artist_name} maintenant à {new_time} (était {old_time}). Scène: {stage_name}.",
+        "zh": "📢 时间变更：{artist_name}现在改为{new_time}演出（原{old_time}）。舞台：{stage_name}。",
+        "vi": "📢 THAY ĐỔI LỊCH: {artist_name} giờ biểu diễn lúc {new_time} (trước là {old_time}). Sân khấu: {stage_name}."
+      }
+    },
+    {
+      "name": "Schedule - Cancellation",
+      "category": "schedule",
+      "priority": 70,
+      "audio_enabled": true,
+      "variables": ["artist_name"],
+      "content": {
+        "en": "❌ CANCELLED: {artist_name} will not be performing. We apologize for the disappointment. Check app for updated schedule.",
+        "es": "❌ CANCELADO: {artist_name} no actuará. Lamentamos la decepción. Consulte la app para el horario actualizado.",
+        "fr": "❌ ANNULÉ: {artist_name} ne se produira pas. Nous nous excusons pour cette déception.",
+        "zh": "❌ 取消：{artist_name}将不会演出。对此深表歉意。请查看应用获取更新时间表。",
+        "vi": "❌ HỦY: {artist_name} sẽ không biểu diễn. Chúng tôi xin lỗi vì sự thất vọng."
+      }
+    },
+    {
+      "name": "Schedule - Delay",
+      "category": "schedule",
+      "priority": 60,
+      "audio_enabled": true,
+      "variables": ["artist_name", "delay_time", "new_start"],
+      "content": {
+        "en": "⏳ DELAY: {artist_name} delayed by {delay_time} minutes. New start time: {new_start}. Thank you for your patience.",
+        "es": "⏳ RETRASO: {artist_name} retrasado {delay_time} minutos. Nueva hora de inicio: {new_start}.",
+        "fr": "⏳ RETARD: {artist_name} retardé de {delay_time} minutes. Nouvelle heure: {new_start}.",
+        "zh": "⏳ 延迟：{artist_name}延迟{delay_time}分钟。新开始时间：{new_start}。",
+        "vi": "⏳ TRỄ: {artist_name} trễ {delay_time} phút. Giờ bắt đầu mới: {new_start}."
+      }
+    },
+    {
+      "name": "Wayfinding - Restrooms",
+      "category": "wayfinding",
+      "priority": 25,
+      "audio_enabled": false,
+      "variables": ["location", "other_locations", "accessible_locations"],
+      "content": {
+        "en": "🚻 RESTROOMS: Nearest at {location}. Additional facilities at {other_locations}. Accessible restrooms at {accessible_locations}.",
+        "es": "🚻 BAÑOS: Más cercanos en {location}. Instalaciones adicionales en {other_locations}. Baños accesibles en {accessible_locations}.",
+        "fr": "🚻 TOILETTES: Les plus proches à {location}. Autres installations à {other_locations}. Toilettes accessibles à {accessible_locations}.",
+        "zh": "🚻 洗手间：最近的在{location}。其他位置：{other_locations}。无障碍洗手间：{accessible_locations}。",
+        "vi": "🚻 NHÀ VỆ SINH: Gần nhất tại {location}. Thêm tại {other_locations}. Nhà vệ sinh tiếp cận tại {accessible_locations}."
+      }
+    },
+    {
+      "name": "Wayfinding - First Aid",
+      "category": "wayfinding",
+      "priority": 35,
+      "audio_enabled": false,
+      "variables": ["location", "other_locations"],
+      "content": {
+        "en": "🏥 FIRST AID: Medical tent at {location}. Open 24 hours. Additional first aid stations at {other_locations}.",
+        "es": "🏥 PRIMEROS AUXILIOS: Carpa médica en {location}. Abierto 24 horas. Estaciones adicionales en {other_locations}.",
+        "fr": "🏥 PREMIERS SOINS: Tente médicale à {location}. Ouvert 24h. Autres postes à {other_locations}.",
+        "zh": "🏥 急救：医疗帐篷在{location}。24小时开放。其他急救站：{other_locations}。",
+        "vi": "🏥 SƠ CỨU: Lều y tế tại {location}. Mở 24 giờ. Trạm sơ cứu khác tại {other_locations}."
+      }
+    },
+    {
+      "name": "Wayfinding - Water Stations",
+      "category": "wayfinding",
+      "priority": 30,
+      "audio_enabled": false,
+      "variables": ["locations"],
+      "content": {
+        "en": "💧 FREE WATER: Refill stations at {locations}. Bring your own bottle or purchase at vendors. Stay hydrated!",
+        "es": "💧 AGUA GRATIS: Estaciones de recarga en {locations}. Traiga su botella o compre en vendedores. ¡Manténgase hidratado!",
+        "fr": "💧 EAU GRATUITE: Points de recharge à {locations}. Apportez votre gourde ou achetez aux stands. Restez hydraté!",
+        "zh": "💧 免费饮水：加水站在{locations}。自带水瓶或在摊位购买。注意补水！",
+        "vi": "💧 NƯỚC MIỄN PHÍ: Trạm nước tại {locations}. Mang theo chai hoặc mua tại quầy. Uống đủ nước!"
+      }
+    },
+    {
+      "name": "Wayfinding - Lost and Found",
+      "category": "wayfinding",
+      "priority": 25,
+      "audio_enabled": false,
+      "variables": ["location", "hours"],
+      "content": {
+        "en": "📦 LOST & FOUND: Located at {location}. Open {hours}. Report lost items to any staff or via app.",
+        "es": "📦 OBJETOS PERDIDOS: Ubicado en {location}. Abierto {hours}. Reporte objetos perdidos a cualquier personal o vía app.",
+        "fr": "📦 OBJETS TROUVÉS: Situé à {location}. Ouvert {hours}. Signalez les objets perdus au personnel ou via l'app.",
+        "zh": "📦 失物招领：位于{location}。开放时间{hours}。可向任何工作人员或通过应用报告丢失物品。",
+        "vi": "📦 ĐỒ THẤT LẠC: Tại {location}. Mở cửa {hours}. Báo đồ mất cho nhân viên hoặc qua ứng dụng."
+      }
+    },
+    {
+      "name": "Wayfinding - Parking",
+      "category": "wayfinding",
+      "priority": 30,
+      "audio_enabled": false,
+      "variables": ["locations", "premium_locations", "shuttle_frequency"],
+      "content": {
+        "en": "🅿️ PARKING: General parking at {locations}. VIP/Accessible parking at {premium_locations}. Shuttles every {shuttle_frequency} min.",
+        "es": "🅿️ ESTACIONAMIENTO: Estacionamiento general en {locations}. VIP/Accesible en {premium_locations}. Buses cada {shuttle_frequency} min.",
+        "fr": "🅿️ PARKING: Parking général à {locations}. VIP/Accessible à {premium_locations}. Navettes toutes les {shuttle_frequency} min.",
+        "zh": "🅿️ 停车：普通停车场在{locations}。VIP/无障碍停车在{premium_locations}。班车每{shuttle_frequency}分钟一班。",
+        "vi": "🅿️ ĐỖ XE: Bãi đỗ chung tại {locations}. VIP/Tiếp cận tại {premium_locations}. Xe buýt mỗi {shuttle_frequency} phút."
+      }
+    },
+    {
+      "name": "Sponsor - Brand Activation",
+      "category": "sponsor",
+      "priority": 20,
+      "audio_enabled": false,
+      "variables": ["sponsor_name", "location", "offer_description"],
+      "content": {
+        "en": "🎯 {sponsor_name} ACTIVATION: Visit us at {location}! {offer_description}. While supplies last.",
+        "es": "🎯 ACTIVACIÓN {sponsor_name}: ¡Visítenos en {location}! {offer_description}. Hasta agotar existencias.",
+        "fr": "🎯 ACTIVATION {sponsor_name}: Visitez-nous à {location}! {offer_description}. Dans la limite des stocks.",
+        "zh": "🎯 {sponsor_name}活动：来{location}找我们！{offer_description}。数量有限，先到先得。",
+        "vi": "🎯 KÍCH HOẠT {sponsor_name}: Ghé thăm tại {location}! {offer_description}. Số lượng có hạn."
+      }
+    },
+    {
+      "name": "Sponsor - Free Samples",
+      "category": "sponsor",
+      "priority": 25,
+      "audio_enabled": false,
+      "variables": ["sponsor_name", "item_description", "location"],
+      "content": {
+        "en": "🎁 FREE SAMPLES: {sponsor_name} giving away {item_description} at {location}. First come, first served!",
+        "es": "🎁 MUESTRAS GRATIS: {sponsor_name} regalando {item_description} en {location}. ¡Por orden de llegada!",
+        "fr": "🎁 ÉCHANTILLONS GRATUITS: {sponsor_name} offre {item_description} à {location}. Premier arrivé, premier servi!",
+        "zh": "🎁 免费样品：{sponsor_name}在{location}派发{item_description}。先到先得！",
+        "vi": "🎁 MẪU MIỄN PHÍ: {sponsor_name} tặng {item_description} tại {location}. Ai đến trước được trước!"
+      }
+    },
+    {
+      "name": "Sponsor - Thank You",
+      "category": "sponsor",
+      "priority": 15,
+      "audio_enabled": false,
+      "variables": ["sponsor_list"],
+      "content": {
+        "en": "🙏 Thank you to our sponsors: {sponsor_list}. Their support makes this event possible!",
+        "es": "🙏 Gracias a nuestros patrocinadores: {sponsor_list}. ¡Su apoyo hace posible este evento!",
+        "fr": "🙏 Merci à nos sponsors: {sponsor_list}. Leur soutien rend cet événement possible!",
+        "zh": "🙏 感谢我们的赞助商：{sponsor_list}。他们的支持使本活动成为可能！",
+        "vi": "🙏 Cảm ơn nhà tài trợ: {sponsor_list}. Sự hỗ trợ của họ giúp sự kiện này thành hiện thực!"
+      }
+    },
+    {
+      "name": "Attendee - Shoutout",
+      "category": "attendee",
+      "priority": 15,
+      "audio_enabled": false,
+      "variables": ["message", "sender_name"],
+      "content": {
+        "en": "📣 SHOUTOUT from {sender_name}: {message}",
+        "es": "📣 SALUDO de {sender_name}: {message}",
+        "fr": "📣 MESSAGE de {sender_name}: {message}",
+        "zh": "📣 来自{sender_name}的喊话：{message}",
+        "vi": "📣 LỜI CHÀO từ {sender_name}: {message}"
+      }
+    },
+    {
+      "name": "Attendee - Lost Item",
+      "category": "attendee",
+      "priority": 25,
+      "audio_enabled": false,
+      "variables": ["item_description", "contact_info"],
+      "content": {
+        "en": "🔍 LOST: {item_description}. If found, please bring to Lost & Found or contact {contact_info}.",
+        "es": "🔍 PERDIDO: {item_description}. Si lo encuentra, llévelo a Objetos Perdidos o contacte {contact_info}.",
+        "fr": "🔍 PERDU: {item_description}. Si trouvé, amenez aux Objets Trouvés ou contactez {contact_info}.",
+        "zh": "🔍 寻物：{item_description}。如找到，请送到失物招领处或联系{contact_info}。",
+        "vi": "🔍 MẤT: {item_description}. Nếu tìm thấy, vui lòng mang đến Đồ Thất Lạc hoặc liên hệ {contact_info}."
+      }
+    },
+    {
+      "name": "General - Welcome",
+      "category": "general",
+      "priority": 20,
+      "audio_enabled": false,
+      "variables": ["event_name"],
+      "content": {
+        "en": "🎉 WELCOME to {event_name}! Have an amazing time. Stay safe, stay hydrated, and enjoy the show!",
+        "es": "🎉 ¡BIENVENIDOS a {event_name}! Pásela increíble. Manténgase seguro, hidratado y ¡disfrute el show!",
+        "fr": "🎉 BIENVENUE à {event_name}! Passez un moment incroyable. Restez en sécurité, hydraté et profitez du spectacle!",
+        "zh": "🎉 欢迎来到{event_name}！祝您度过美好时光。注意安全，保持水分，享受演出！",
+        "vi": "🎉 CHÀO MỪNG đến {event_name}! Chúc bạn có thời gian tuyệt vời. Giữ an toàn, uống đủ nước và tận hưởng!"
+      }
+    },
+    {
+      "name": "General - Closing Soon",
+      "category": "general",
+      "priority": 40,
+      "audio_enabled": true,
+      "variables": ["closing_time"],
+      "content": {
+        "en": "🌙 EVENT CLOSING at {closing_time}. Thank you for joining us! Please make your way to exits. Safe travels home!",
+        "es": "🌙 EVENTO CIERRA a las {closing_time}. ¡Gracias por acompañarnos! Diríjase a las salidas. ¡Buen viaje a casa!",
+        "fr": "🌙 FERMETURE à {closing_time}. Merci d'être venus! Dirigez-vous vers les sorties. Bon retour!",
+        "zh": "🌙 活动于{closing_time}结束。感谢您的参与！请前往出口。一路平安！",
+        "vi": "🌙 SỰ KIỆN ĐÓNG CỬA lúc {closing_time}. Cảm ơn bạn đã tham gia! Vui lòng đi đến lối ra. Về nhà an toàn!"
+      }
+    },
+    {
+      "name": "General - Last Call",
+      "category": "general",
+      "priority": 35,
+      "audio_enabled": true,
+      "variables": ["service", "end_time"],
+      "content": {
+        "en": "⏰ LAST CALL: {service} ends at {end_time}. This is your final chance!",
+        "es": "⏰ ÚLTIMA LLAMADA: {service} termina a las {end_time}. ¡Esta es su última oportunidad!",
+        "fr": "⏰ DERNIÈRE CHANCE: {service} se termine à {end_time}. C'est votre dernière chance!",
+        "zh": "⏰ 最后通知：{service}于{end_time}结束。这是最后机会！",
+        "vi": "⏰ CƠ HỘI CUỐI: {service} kết thúc lúc {end_time}. Đây là cơ hội cuối cùng!"
+      }
+    }
+  ]
+}
