@@ -21,7 +21,7 @@ import json
 
 # Import from backend
 from database import init_db, get_db
-from models import Sign, Event, Template, Message, Submission
+from models import Sign, Event, Template, Message, Submission, Zone
 from schemas import (
     SignCreate, SignUpdate, SignStatus, SignHeartbeat,
     EventCreate, EventUpdate,
@@ -94,6 +94,7 @@ def get_system_stats(db):
 async def dashboard(request: Request, db=Depends(get_db)):
     """Main dashboard view"""
     signs = db.query(Sign).all()
+    zones = db.query(Zone).all()
     messages = db.query(Message).order_by(Message.created_at.desc()).limit(10).all()
     tpls = db.query(Template).all()
     stats = get_system_stats(db)
@@ -102,6 +103,7 @@ async def dashboard(request: Request, db=Depends(get_db)):
         "request": request,
         "active_page": "dashboard",
         "signs": [s.to_dict() for s in signs],
+        "zones": [z.to_dict() for z in zones],
         "messages": [m.to_dict() for m in messages],
         "templates": [t.to_dict() for t in tpls],
         "stats": stats
@@ -112,12 +114,14 @@ async def dashboard(request: Request, db=Depends(get_db)):
 async def signs_page(request: Request, db=Depends(get_db)):
     """Signs management page"""
     signs = db.query(Sign).all()
+    zones = db.query(Zone).all()
     stats = get_system_stats(db)
     
     return templates.TemplateResponse("signs.html", {
         "request": request,
         "active_page": "signs",
         "signs": [s.to_dict() for s in signs],
+        "zones": [z.to_dict() for z in zones],
         "stats": stats
     })
 
@@ -127,6 +131,7 @@ async def messages_page(request: Request, db=Depends(get_db)):
     """Messages history page"""
     messages = db.query(Message).order_by(Message.created_at.desc()).all()
     signs = db.query(Sign).all()
+    zones = db.query(Zone).all()
     tpls = db.query(Template).all()
     stats = get_system_stats(db)
     
@@ -135,6 +140,7 @@ async def messages_page(request: Request, db=Depends(get_db)):
         "active_page": "messages",
         "messages": [m.to_dict() for m in messages],
         "signs": [s.to_dict() for s in signs],
+        "zones": [z.to_dict() for z in zones],
         "templates": [t.to_dict() for t in tpls],
         "stats": stats
     })
@@ -312,6 +318,69 @@ async def get_sign(sign_id: str, db=Depends(get_db)):
     return sign.to_dict()
 
 
+@app.put("/api/signs/{sign_id}", tags=["Signs"])
+async def update_sign(sign_id: str, sign: SignUpdate, db=Depends(get_db)):
+    """Update a sign"""
+    db_sign = db.query(Sign).filter(Sign.id == sign_id).first()
+    if not db_sign:
+        raise HTTPException(status_code=404, detail="Sign not found")
+    
+    for key, value in sign.model_dump(exclude_unset=True).items():
+        setattr(db_sign, key, value)
+    db.commit()
+    db.refresh(db_sign)
+    
+    await manager.broadcast_to_dashboards({
+        "type": "sign_updated",
+        "data": db_sign.to_dict()
+    })
+    return db_sign.to_dict()
+
+
+# --- Zones ---
+@app.post("/api/zones", tags=["Zones"])
+async def create_zone(name: str, code: str = None, color: str = "#3B82F6", description: str = None, db=Depends(get_db)):
+    """Create a new zone"""
+    zone = Zone(name=name, code=code or name[:3].upper(), color=color, description=description)
+    db.add(zone)
+    db.commit()
+    db.refresh(zone)
+    return zone.to_dict()
+
+
+@app.get("/api/zones", tags=["Zones"])
+async def list_zones(db=Depends(get_db)):
+    """List all zones"""
+    return [z.to_dict() for z in db.query(Zone).all()]
+
+
+@app.put("/api/zones/{zone_id}", tags=["Zones"])
+async def update_zone(zone_id: str, name: str = None, code: str = None, color: str = None, description: str = None, db=Depends(get_db)):
+    """Update a zone"""
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="Zone not found")
+    
+    if name: zone.name = name
+    if code: zone.code = code
+    if color: zone.color = color
+    if description: zone.description = description
+    db.commit()
+    db.refresh(zone)
+    return zone.to_dict()
+
+
+@app.delete("/api/zones/{zone_id}", tags=["Zones"])
+async def delete_zone(zone_id: str, db=Depends(get_db)):
+    """Delete a zone"""
+    zone = db.query(Zone).filter(Zone.id == zone_id).first()
+    if not zone:
+        raise HTTPException(status_code=404, detail="Zone not found")
+    db.delete(zone)
+    db.commit()
+    return {"deleted": zone_id}
+
+
 # --- Templates ---
 @app.post("/api/templates", tags=["Templates"])
 async def create_template(template: TemplateCreate, db=Depends(get_db)):
@@ -381,6 +450,30 @@ async def send_message(message: MessageCreate, db=Depends(get_db)):
 async def list_messages(db=Depends(get_db)):
     """List all messages"""
     return [m.to_dict() for m in db.query(Message).order_by(Message.created_at.desc()).all()]
+
+
+@app.post("/api/messages/{message_id}/clear", tags=["Messages"])
+async def clear_message(message_id: str, db=Depends(get_db)):
+    """Clear an active message"""
+    message = db.query(Message).filter(Message.id == message_id).first()
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    message.status = "cleared"
+    db.commit()
+    
+    # Notify signs to clear the message
+    await manager.broadcast_to_signs({
+        "type": "clear_message",
+        "data": {"message_id": message_id}
+    })
+    
+    await manager.broadcast_to_dashboards({
+        "type": "message_cleared",
+        "data": message.to_dict()
+    })
+    
+    return {"status": "cleared", "message_id": message_id}
 
 
 @app.post("/api/override", tags=["Messages"])

@@ -3,49 +3,808 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header"><h2 class="card-title">Message History</h2><button class="btn btn-primary" onclick="openMessageModal()">+ New Message</button></div>
+    <div class="card-header">
+        <h2 class="card-title">Message History</h2>
+        <button class="btn btn-primary" onclick="openMessageModal()">+ New Message</button>
+    </div>
+    
     {% if messages %}
     <table class="table">
-        <thead><tr><th>Time</th><th>Content</th><th>Priority</th><th>Status</th><th>Targets</th></tr></thead>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Content</th>
+                <th>Priority</th>
+                <th>Mode</th>
+                <th>Status</th>
+                <th>Targets</th>
+                <th>Audio</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
         <tbody>
             {% for msg in messages %}
-            <tr>
+            <tr class="message-row priority-{{ 'critical' if msg.priority >= 90 else 'warning' if msg.priority >= 70 else 'info' }}">
                 <td>{{ msg.created_at[:16] if msg.created_at else '-' }}</td>
-                <td>{{ msg.content[:60] }}{% if msg.content|length > 60 %}...{% endif %}</td>
-                <td>{% if msg.priority == 'emergency' %}<span style="color: var(--danger);">🚨 Emergency</span>{% elif msg.priority == 'high' %}<span style="color: var(--warning);">⚠️ High</span>{% else %}Normal{% endif %}</td>
-                <td>{{ msg.status }}</td>
-                <td>{% if msg.target_signs %}{% if 'all' in msg.target_signs %}All{% else %}{{ msg.target_signs|length }} sign(s){% endif %}{% else %}-{% endif %}</td>
+                <td>
+                    <div class="message-content-preview">
+                        {{ msg.content[:60] }}{% if msg.content and msg.content|length > 60 %}...{% endif %}
+                    </div>
+                </td>
+                <td>
+                    {% if msg.priority >= 90 %}
+                    <span class="priority-badge critical">🚨 Critical</span>
+                    {% elif msg.priority >= 70 %}
+                    <span class="priority-badge warning">⚠️ Warning</span>
+                    {% else %}
+                    <span class="priority-badge info">ℹ️ Info</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if msg.persistence_mode == 'emergency_lock' %}
+                    <span class="mode-badge emergency">🔒 Locked</span>
+                    {% elif msg.persistence_mode == 'until_cleared' %}
+                    <span class="mode-badge until-cleared">⏸️ Until Clear</span>
+                    {% else %}
+                    <span class="mode-badge timed">⏱️ {{ msg.duration_seconds }}s</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-badge {{ msg.status }}">{{ msg.status }}</span>
+                </td>
+                <td>
+                    {% if msg.target_signs %}
+                        {% if 'all' in msg.target_signs %}
+                        <span class="target-badge all">📡 All Signs</span>
+                        {% else %}
+                        <span class="target-badge">{{ msg.target_signs|length }} sign(s)</span>
+                        {% endif %}
+                    {% elif msg.target_zones %}
+                        <span class="target-badge zone">📍 {{ msg.target_zones|length }} zone(s)</span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if msg.audio_enabled %}
+                    🔊 {{ msg.audio_languages|join(', ') if msg.audio_languages else 'EN' }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if msg.status == 'active' and msg.persistence_mode != 'timed' %}
+                    <button class="btn btn-sm btn-outline" onclick="clearMessage('{{ msg.id }}')">Clear</button>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📭</p><p>No messages sent yet.</p></div>
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);">
+        <p style="font-size: 2rem; margin-bottom: 1rem;">📭</p>
+        <p>No messages sent yet.</p>
+    </div>
     {% endif %}
 </div>
 
-<div id="message-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
-        <div class="card-header"><h2 class="card-title">📢 Send Message</h2><button onclick="closeMessageModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+<!-- New Message Modal -->
+<div id="message-modal" class="modal">
+    <div class="card modal-content" style="max-width: 600px;">
+        <div class="card-header">
+            <h2 class="card-title">📢 Send Message</h2>
+            <button onclick="closeMessageModal()" class="close-btn">×</button>
+        </div>
         <form id="message-form">
-            <div class="form-group"><label class="form-label">Message Content</label><textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea></div>
-            <div class="form-group"><label class="form-label">Priority</label><select name="priority" class="form-select"><option value="normal">Normal</option><option value="high">High</option><option value="emergency">Emergency</option></select></div>
-            <div class="message-preview" id="message-preview">MESSAGE PREVIEW</div>
-            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button><button type="submit" class="btn btn-primary">Send Message</button></div>
+            <!-- Template Selection -->
+            <div class="form-group">
+                <label class="form-label">Template (optional)</label>
+                <select name="template_id" class="form-select" onchange="loadTemplate(this.value)">
+                    <option value="">-- Custom message --</option>
+                    <optgroup label="🚨 Emergency">
+                        {% for tpl in templates if tpl.category == 'emergency' %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="⛈️ Weather">
+                        {% for tpl in templates if tpl.category == 'weather' %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="👥 Crowd">
+                        {% for tpl in templates if tpl.category == 'crowd' %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="📅 Schedule">
+                        {% for tpl in templates if tpl.category == 'schedule' %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="🧭 Wayfinding">
+                        {% for tpl in templates if tpl.category == 'wayfinding' %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="📣 General">
+                        {% for tpl in templates if tpl.category in ['general', 'sponsor', 'attendee'] %}
+                        <option value="{{ tpl.id }}" data-priority="{{ tpl.priority }}" data-audio="{{ tpl.audio_enabled }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            
+            <!-- Message Content -->
+            <div class="form-group">
+                <label class="form-label">Message Content</label>
+                <textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea>
+            </div>
+            
+            <!-- Language Selection -->
+            <div class="form-group">
+                <label class="form-label">Language</label>
+                <select name="language" id="language-select" class="form-select" onchange="changeLanguage(this.value)">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                </select>
+            </div>
+            
+            <!-- Target Selection -->
+            <div class="form-group">
+                <label class="form-label">Send To</label>
+                <div class="target-options">
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="all" checked onchange="updateTargetUI()">
+                        <span>📡 All Signs</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="zone" onchange="updateTargetUI()">
+                        <span>📍 By Zone</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="select" onchange="updateTargetUI()">
+                        <span>✅ Select Signs</span>
+                    </label>
+                </div>
+                
+                <!-- Zone Selector (hidden by default) -->
+                <div id="zone-selector" class="sub-selector" style="display: none;">
+                    <select name="target_zones" class="form-select" multiple>
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}">{{ zone.name }} ({{ zone.code }})</option>
+                        {% endfor %}
+                    </select>
+                    {% if not zones %}
+                    <p class="help-text">No zones defined. <a href="/settings">Create zones</a></p>
+                    {% endif %}
+                </div>
+                
+                <!-- Sign Selector (hidden by default) -->
+                <div id="sign-selector" class="sub-selector" style="display: none;">
+                    <div class="checkbox-grid">
+                        {% for sign in signs %}
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="target_signs" value="{{ sign.id }}">
+                            <span class="sign-status {{ sign.status }}">●</span>
+                            {{ sign.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    {% if not signs %}
+                    <p class="help-text">No signs registered.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Priority -->
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                <div class="priority-selector">
+                    <label class="priority-option info">
+                        <input type="radio" name="priority" value="30" checked>
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span class="priority-label">ℹ️ Info</span>
+                            <span class="priority-desc">Normal messages</span>
+                        </span>
+                    </label>
+                    <label class="priority-option warning">
+                        <input type="radio" name="priority" value="75">
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span class="priority-label">⚠️ Warning</span>
+                            <span class="priority-desc">Weather, capacity</span>
+                        </span>
+                    </label>
+                    <label class="priority-option critical">
+                        <input type="radio" name="priority" value="95">
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span class="priority-label">🚨 Critical</span>
+                            <span class="priority-desc">Emergencies only</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Persistence Mode -->
+            <div class="form-group">
+                <label class="form-label">Duration</label>
+                <div class="persistence-selector">
+                    <label class="persistence-option">
+                        <input type="radio" name="persistence_mode" value="timed" checked onchange="updateDurationUI()">
+                        <span class="persistence-box">
+                            <span>⏱️ Timed</span>
+                            <span class="persistence-desc">Shows for set duration</span>
+                        </span>
+                    </label>
+                    <label class="persistence-option">
+                        <input type="radio" name="persistence_mode" value="until_cleared" onchange="updateDurationUI()">
+                        <span class="persistence-box">
+                            <span>⏸️ Until Cleared</span>
+                            <span class="persistence-desc">Manual clear required</span>
+                        </span>
+                    </label>
+                    <label class="persistence-option">
+                        <input type="radio" name="persistence_mode" value="emergency_lock" onchange="updateDurationUI()">
+                        <span class="persistence-box">
+                            <span>🔒 Emergency Lock</span>
+                            <span class="persistence-desc">Blocks all other messages</span>
+                        </span>
+                    </label>
+                </div>
+                
+                <!-- Duration input (for timed mode) -->
+                <div id="duration-input" class="duration-group">
+                    <label>Duration: </label>
+                    <input type="number" name="duration_seconds" value="30" min="5" max="300" class="form-input duration-field">
+                    <span>seconds</span>
+                </div>
+            </div>
+            
+            <!-- Audio Settings -->
+            <div class="form-group">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="audio_enabled" id="audio-checkbox"> 
+                    🔊 Enable audio announcement
+                </label>
+                <div id="audio-languages" class="audio-lang-options" style="display: none;">
+                    <label><input type="checkbox" name="audio_lang" value="en" checked> English</label>
+                    <label><input type="checkbox" name="audio_lang" value="es"> Spanish</label>
+                    <label><input type="checkbox" name="audio_lang" value="fr"> French</label>
+                    <label><input type="checkbox" name="audio_lang" value="zh"> Chinese</label>
+                    <label><input type="checkbox" name="audio_lang" value="vi"> Vietnamese</label>
+                </div>
+            </div>
+            
+            <!-- Preview -->
+            <div class="message-preview" id="message-preview">
+                <div class="preview-label">Preview</div>
+                <div class="preview-content">MESSAGE PREVIEW</div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="send-btn">Send Message</button>
+            </div>
         </form>
     </div>
 </div>
 
+<style>
+/* Priority row colors */
+.message-row.priority-critical {
+    border-left: 4px solid #DC2626;
+    background: rgba(220, 38, 38, 0.05);
+}
+.message-row.priority-warning {
+    border-left: 4px solid #F59E0B;
+    background: rgba(245, 158, 11, 0.05);
+}
+.message-row.priority-info {
+    border-left: 4px solid #10B981;
+}
+
+/* Priority badges */
+.priority-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.priority-badge.critical {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+.priority-badge.warning {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.priority-badge.info {
+    background: #D1FAE5;
+    color: #059669;
+}
+
+/* Mode badges */
+.mode-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+.mode-badge.emergency {
+    background: #FEE2E2;
+    color: #DC2626;
+}
+.mode-badge.until-cleared {
+    background: #E0E7FF;
+    color: #4F46E5;
+}
+.mode-badge.timed {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+/* Target badges */
+.target-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background: #F3F4F6;
+}
+.target-badge.all {
+    background: #DBEAFE;
+    color: #2563EB;
+}
+.target-badge.zone {
+    background: #FCE7F3;
+    color: #DB2777;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+.status-badge.active {
+    background: #D1FAE5;
+    color: #059669;
+}
+.status-badge.pending {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.status-badge.expired, .status-badge.cleared {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+}
+.modal-content {
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-500);
+}
+.close-btn:hover {
+    color: var(--gray-700);
+}
+
+/* Target options */
+.target-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.radio-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+.radio-option input {
+    display: none;
+}
+.sub-selector {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: var(--gray-50);
+    border-radius: 6px;
+}
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.checkbox-option:hover {
+    background: var(--gray-100);
+}
+.sign-status {
+    font-size: 0.75rem;
+}
+.sign-status.online { color: #10B981; }
+.sign-status.offline { color: #6B7280; }
+.sign-status.warning { color: #F59E0B; }
+
+/* Priority selector */
+.priority-selector {
+    display: flex;
+    gap: 0.75rem;
+}
+.priority-option {
+    flex: 1;
+    cursor: pointer;
+}
+.priority-option input {
+    display: none;
+}
+.priority-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.priority-option:has(input:checked) .priority-box {
+    border-width: 2px;
+}
+.priority-option.info:has(input:checked) .priority-box {
+    border-color: #10B981;
+    background: #D1FAE5;
+}
+.priority-option.warning:has(input:checked) .priority-box {
+    border-color: #F59E0B;
+    background: #FEF3C7;
+}
+.priority-option.critical:has(input:checked) .priority-box {
+    border-color: #DC2626;
+    background: #FEE2E2;
+}
+.priority-color {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-bottom: 0.25rem;
+}
+.priority-option.info .priority-color { background: #10B981; }
+.priority-option.warning .priority-color { background: #F59E0B; }
+.priority-option.critical .priority-color { background: #DC2626; }
+.priority-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+.priority-desc {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Persistence selector */
+.persistence-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.persistence-option {
+    cursor: pointer;
+}
+.persistence-option input {
+    display: none;
+}
+.persistence-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.persistence-option:has(input:checked) .persistence-box {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+.persistence-desc {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* Duration input */
+.duration-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: 6px;
+}
+.duration-field {
+    width: 80px;
+    text-align: center;
+}
+
+/* Audio options */
+.checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.audio-lang-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: 6px;
+}
+.audio-lang-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+
+/* Preview */
+.message-preview {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #1a1a1a;
+    border-radius: 8px;
+    text-align: center;
+}
+.preview-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+.preview-content {
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    word-wrap: break-word;
+}
+.message-preview.priority-info { border: 2px solid #10B981; }
+.message-preview.priority-warning { border: 2px solid #F59E0B; }
+.message-preview.priority-critical { border: 2px solid #DC2626; background: #2a0a0a; }
+
+/* Form actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+}
+</style>
+
 <script>
-function openMessageModal() { document.getElementById('message-modal').style.display = 'flex'; }
-function closeMessageModal() { document.getElementById('message-modal').style.display = 'none'; }
-document.getElementById('message-content').addEventListener('input', function() { document.getElementById('message-preview').textContent = this.value || 'MESSAGE PREVIEW'; });
+// Template data for language switching
+let currentTemplate = null;
+let templateTranslations = {};
+
+function openMessageModal() {
+    document.getElementById('message-modal').style.display = 'flex';
+}
+
+function closeMessageModal() {
+    document.getElementById('message-modal').style.display = 'none';
+    // Reset form
+    document.getElementById('message-form').reset();
+    currentTemplate = null;
+    updatePreview();
+}
+
+function updateTargetUI() {
+    const targetType = document.querySelector('input[name="target_type"]:checked').value;
+    document.getElementById('zone-selector').style.display = targetType === 'zone' ? 'block' : 'none';
+    document.getElementById('sign-selector').style.display = targetType === 'select' ? 'block' : 'none';
+}
+
+function updateDurationUI() {
+    const mode = document.querySelector('input[name="persistence_mode"]:checked').value;
+    document.getElementById('duration-input').style.display = mode === 'timed' ? 'flex' : 'none';
+}
+
+function updatePreview() {
+    const content = document.getElementById('message-content').value || 'MESSAGE PREVIEW';
+    const priority = parseInt(document.querySelector('input[name="priority"]:checked')?.value || 30);
+    const preview = document.getElementById('message-preview');
+    
+    preview.querySelector('.preview-content').textContent = content;
+    preview.className = 'message-preview';
+    if (priority >= 90) {
+        preview.classList.add('priority-critical');
+    } else if (priority >= 70) {
+        preview.classList.add('priority-warning');
+    } else {
+        preview.classList.add('priority-info');
+    }
+}
+
+// Audio checkbox toggle
+document.getElementById('audio-checkbox').addEventListener('change', function() {
+    document.getElementById('audio-languages').style.display = this.checked ? 'flex' : 'none';
+});
+
+// Content input updates preview
+document.getElementById('message-content').addEventListener('input', updatePreview);
+
+// Priority changes update preview
+document.querySelectorAll('input[name="priority"]').forEach(radio => {
+    radio.addEventListener('change', updatePreview);
+});
+
+async function loadTemplate(templateId) {
+    if (!templateId) {
+        currentTemplate = null;
+        document.getElementById('message-content').value = '';
+        updatePreview();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/templates/${templateId}`);
+        const tpl = await response.json();
+        currentTemplate = tpl;
+        
+        // Set content
+        document.getElementById('message-content').value = tpl.body || tpl.content || '';
+        
+        // Set priority based on template
+        const priority = tpl.priority || 30;
+        let priorityValue = '30';
+        if (priority >= 90) priorityValue = '95';
+        else if (priority >= 70) priorityValue = '75';
+        
+        document.querySelector(`input[name="priority"][value="${priorityValue}"]`).checked = true;
+        
+        // Set audio
+        if (tpl.audio_enabled) {
+            document.getElementById('audio-checkbox').checked = true;
+            document.getElementById('audio-languages').style.display = 'flex';
+        }
+        
+        updatePreview();
+    } catch (err) {
+        console.error('Failed to load template:', err);
+    }
+}
+
+function changeLanguage(lang) {
+    // If we have template translations, switch language
+    if (currentTemplate && templateTranslations[currentTemplate.id]) {
+        const content = templateTranslations[currentTemplate.id][lang];
+        if (content) {
+            document.getElementById('message-content').value = content;
+            updatePreview();
+        }
+    }
+}
+
+async function clearMessage(messageId) {
+    if (!confirm('Clear this message from all signs?')) return;
+    
+    try {
+        await fetch(`/api/messages/${messageId}/clear`, { method: 'POST' });
+        location.reload();
+    } catch (err) {
+        alert('Failed to clear message');
+    }
+}
+
 document.getElementById('message-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
     const formData = new FormData(this);
-    await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), priority: formData.get('priority'), target_signs: ['all'] }) });
-    closeMessageModal(); location.reload();
+    const targetType = formData.get('target_type');
+    
+    // Build target arrays
+    let targetSigns = ['all'];
+    let targetZones = [];
+    
+    if (targetType === 'zone') {
+        const zoneSelect = this.querySelector('[name="target_zones"]');
+        targetZones = Array.from(zoneSelect.selectedOptions).map(o => o.value);
+        targetSigns = [];
+    } else if (targetType === 'select') {
+        const signCheckboxes = this.querySelectorAll('[name="target_signs"]:checked');
+        targetSigns = Array.from(signCheckboxes).map(cb => cb.value);
+    }
+    
+    // Build audio languages
+    const audioLangs = Array.from(this.querySelectorAll('[name="audio_lang"]:checked')).map(cb => cb.value);
+    
+    const payload = {
+        content: formData.get('content'),
+        priority: parseInt(formData.get('priority')),
+        persistence_mode: formData.get('persistence_mode'),
+        duration_seconds: parseInt(formData.get('duration_seconds')) || 30,
+        target_signs: targetSigns,
+        target_zones: targetZones,
+        audio_enabled: formData.get('audio_enabled') === 'on',
+        audio_languages: audioLangs.length > 0 ? audioLangs : ['en']
+    };
+    
+    // Add template_id if selected
+    const templateId = formData.get('template_id');
+    if (templateId) {
+        payload.template_id = templateId;
+    }
+    
+    try {
+        const response = await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) throw new Error('Failed to send');
+        
+        closeMessageModal();
+        location.reload();
+    } catch (err) {
+        alert('Failed to send message: ' + err.message);
+    }
 });
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeMessageModal(); });
+
+// Escape key closes modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMessageModal();
+});
+
+// Initialize
+updatePreview();
 </script>
 {% endblock %}

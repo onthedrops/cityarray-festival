@@ -2,90 +2,914 @@
 {% block title %}Dashboard - CITYARRAY Festival{% endblock %}
 
 {% block content %}
-<div class="grid grid-4 mb-2">
-    <div class="card"><div class="stat"><div class="stat-value" id="stat-online">{{ stats.signs.online }}</div><div class="stat-label">Signs Online</div></div></div>
-    <div class="card"><div class="stat"><div class="stat-value" id="stat-offline">{{ stats.signs.offline }}</div><div class="stat-label">Signs Offline</div></div></div>
-    <div class="card"><div class="stat"><div class="stat-value" id="stat-pending">{{ stats.submissions.pending }}</div><div class="stat-label">Pending Submissions</div></div></div>
-    <div class="card"><div class="stat"><div class="stat-value">{{ stats.signs.total }}</div><div class="stat-label">Total Signs</div></div></div>
-</div>
-
-<div class="card">
-    <div class="card-header"><h2 class="card-title">Quick Actions</h2></div>
-    <div class="flex gap-2">
-        <button class="btn btn-danger" onclick="openOverrideModal()">⚠️ Send Override</button>
-        <button class="btn btn-primary" onclick="openMessageModal()">📢 Send Message</button>
-        <a href="/submissions?status=pending" class="btn btn-outline">📝 Review Submissions ({{ stats.submissions.pending }})</a>
+<!-- Compact Stats Bar -->
+<div class="stats-bar">
+    <div class="stat-mini">
+        <span class="stat-dot online"></span>
+        <span class="stat-value" id="stat-online">{{ stats.signs.online }}</span>
+        <span class="stat-label">Online</span>
+    </div>
+    <div class="stat-mini">
+        <span class="stat-dot offline"></span>
+        <span class="stat-value" id="stat-offline">{{ stats.signs.offline }}</span>
+        <span class="stat-label">Offline</span>
+    </div>
+    <div class="stat-mini">
+        <span class="stat-dot warning"></span>
+        <span class="stat-value" id="stat-pending">{{ stats.submissions.pending }}</span>
+        <span class="stat-label">Pending</span>
+    </div>
+    <div class="stat-mini">
+        <span class="stat-value">{{ stats.signs.total }}</span>
+        <span class="stat-label">Total</span>
     </div>
 </div>
 
+<!-- Quick Actions -->
+<div class="actions-bar">
+    <button class="btn btn-danger" onclick="openOverrideModal()">
+        🚨 Send Override
+    </button>
+    <button class="btn btn-primary" onclick="openMessageModal()">
+        📢 Send Message
+    </button>
+    <a href="/submissions?status=pending" class="btn btn-outline">
+        📝 Submissions ({{ stats.submissions.pending }})
+    </a>
+</div>
+
+<!-- Signs Table -->
 <div class="card">
-    <div class="card-header"><h2 class="card-title">Sign Fleet</h2><a href="/signs" class="btn btn-outline">View All →</a></div>
+    <div class="card-header">
+        <h2 class="card-title">📡 Sign Fleet</h2>
+        <a href="/signs" class="btn btn-outline">Manage Signs →</a>
+    </div>
+    
     {% if signs %}
-    <div class="grid grid-4" id="signs-grid">
-        {% for sign in signs %}
-        <div class="sign-card {{ sign.status }}" data-sign-id="{{ sign.id }}">
-            <div class="sign-header"><span class="sign-name">{{ sign.name }}</span><span class="sign-status {{ sign.status }}">{{ sign.status }}</span></div>
-            <div class="sign-metrics">
-                <div class="sign-metric"><span class="sign-metric-label">🔋 Battery</span><span class="sign-metric-value">{{ sign.battery or 0 }}%</span></div>
-                <div class="sign-metric"><span class="sign-metric-label">📶 Signal</span><span class="sign-metric-value">{{ sign.signal_strength or 0 }}%</span></div>
-                <div class="sign-metric"><span class="sign-metric-label">👥 Count</span><span class="sign-metric-value">{{ sign.crowd_count or 0 }}</span></div>
-                <div class="sign-metric"><span class="sign-metric-label">📊 Density</span><span class="sign-metric-value">{{ sign.crowd_density or 0 }}/m²</span></div>
-            </div>
-            <div class="mt-2"><small style="color: var(--gray-600);">{{ sign.zone or 'Unassigned' }}</small></div>
-        </div>
-        {% endfor %}
-    </div>
+    <table class="table signs-table">
+        <thead>
+            <tr>
+                <th>Health</th>
+                <th>Name</th>
+                <th>Zone</th>
+                <th>Current Message</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="signs-tbody">
+            {% for sign in signs %}
+            <tr data-sign-id="{{ sign.id }}">
+                <td>
+                    <span class="health-indicator {{ sign.status }}"></span>
+                </td>
+                <td>
+                    <strong>{{ sign.name }}</strong>
+                </td>
+                <td>
+                    {% set zone_name = '' %}
+                    {% for zone in zones if zone.id == sign.zone_id %}
+                        {% set zone_name = zone.name %}
+                    {% endfor %}
+                    {% if zone_name %}
+                        <span class="zone-badge">{{ zone_name }}</span>
+                    {% else %}
+                        <span class="no-zone">—</span>
+                    {% endif %}
+                </td>
+                <td class="message-cell">
+                    {% if sign.current_message_id %}
+                        <span class="current-message">{{ sign.current_template or 'Active message' }}</span>
+                    {% else %}
+                        <span class="no-message">No active message</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-badge {{ sign.status }}">{{ sign.status }}</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="quickSend('{{ sign.id }}', '{{ sign.name }}')">Send</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-    <div style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">📡</p><p>No signs registered yet.</p><p class="mt-2"><a href="/simulator" class="btn btn-primary">Launch Simulator</a></p></div>
+    <div style="text-align: center; padding: 3rem; color: var(--gray-600);">
+        <p style="font-size: 2rem; margin-bottom: 1rem;">📡</p>
+        <p>No signs registered yet.</p>
+        <p class="mt-2">
+            <a href="/simulator" class="btn btn-primary">Launch Simulator</a>
+        </p>
+    </div>
     {% endif %}
 </div>
 
-<div id="override-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
-        <div class="card-header"><h2 class="card-title">🚨 Send Override Message</h2><button onclick="closeOverrideModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+<!-- Recent Messages -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">📨 Recent Messages</h2>
+        <a href="/messages" class="btn btn-outline">View All →</a>
+    </div>
+    
+    {% if messages %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Content</th>
+                <th>Priority</th>
+                <th>Targets</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for msg in messages[:5] %}
+            <tr class="message-row priority-{{ 'critical' if msg.priority >= 90 else 'warning' if msg.priority >= 70 else 'info' }}">
+                <td>{{ msg.created_at[11:16] if msg.created_at else '-' }}</td>
+                <td>{{ msg.content[:40] }}{% if msg.content and msg.content|length > 40 %}...{% endif %}</td>
+                <td>
+                    {% if msg.priority >= 90 %}
+                    <span class="priority-badge critical">🚨</span>
+                    {% elif msg.priority >= 70 %}
+                    <span class="priority-badge warning">⚠️</span>
+                    {% else %}
+                    <span class="priority-badge info">ℹ️</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if msg.target_signs and 'all' in msg.target_signs %}
+                    All
+                    {% else %}
+                    {{ msg.target_signs|length if msg.target_signs else 0 }}
+                    {% endif %}
+                </td>
+                <td><span class="status-badge {{ msg.status }}">{{ msg.status }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; padding: 2rem; color: var(--gray-600);">No messages sent yet.</p>
+    {% endif %}
+</div>
+
+<!-- Override Modal (Full Featured) -->
+<div id="override-modal" class="modal">
+    <div class="card modal-content" style="max-width: 600px;">
+        <div class="card-header">
+            <h2 class="card-title">🚨 Send Override</h2>
+            <button onclick="closeOverrideModal()" class="close-btn">×</button>
+        </div>
         <form id="override-form">
-            <div class="form-group"><label class="form-label">Priority</label><select name="priority" class="form-select"><option value="high">⚠️ High</option><option value="emergency">🚨 Emergency</option></select></div>
-            <div class="form-group"><label class="form-label">Message</label><textarea name="content" class="form-textarea" placeholder="Enter override message..." required></textarea></div>
-            <div class="message-preview" id="override-preview">OVERRIDE MESSAGE PREVIEW</div>
-            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeOverrideModal()">Cancel</button><button type="submit" class="btn btn-danger">Send Override</button></div>
+            <!-- Template Selection -->
+            <div class="form-group">
+                <label class="form-label">Template</label>
+                <select name="template_id" class="form-select" onchange="loadOverrideTemplate(this.value)">
+                    <option value="">-- Custom message --</option>
+                    <optgroup label="🚨 Emergency">
+                        {% for tpl in templates if tpl.category == 'emergency' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="⛈️ Weather">
+                        {% for tpl in templates if tpl.category == 'weather' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="👥 Crowd">
+                        {% for tpl in templates if tpl.category == 'crowd' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            
+            <!-- Message Content -->
+            <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea name="content" id="override-content" class="form-textarea" placeholder="Enter override message..." required></textarea>
+            </div>
+            
+            <!-- Target Selection -->
+            <div class="form-group">
+                <label class="form-label">Send To</label>
+                <div class="target-options">
+                    <label class="radio-option">
+                        <input type="radio" name="override_target_type" value="all" checked onchange="updateOverrideTargetUI()">
+                        <span>📡 All Signs</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="override_target_type" value="zone" onchange="updateOverrideTargetUI()">
+                        <span>📍 By Zone</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="override_target_type" value="select" onchange="updateOverrideTargetUI()">
+                        <span>✅ Select</span>
+                    </label>
+                </div>
+                <div id="override-zone-selector" class="sub-selector" style="display: none;">
+                    <select name="override_target_zones" class="form-select" multiple>
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}">{{ zone.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="override-sign-selector" class="sub-selector" style="display: none;">
+                    <div class="checkbox-grid">
+                        {% for sign in signs %}
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="override_target_signs" value="{{ sign.id }}">
+                            <span class="health-dot {{ sign.status }}"></span>
+                            {{ sign.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alert Level -->
+            <div class="form-group">
+                <label class="form-label">Alert Level</label>
+                <div class="priority-selector">
+                    <label class="priority-option warning">
+                        <input type="radio" name="override_priority" value="75" checked>
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span>⚠️ Warning</span>
+                        </span>
+                    </label>
+                    <label class="priority-option critical">
+                        <input type="radio" name="override_priority" value="95">
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span>🚨 Critical</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Persistence -->
+            <div class="form-group">
+                <label class="form-label">Duration</label>
+                <div class="persistence-row">
+                    <label class="radio-inline">
+                        <input type="radio" name="override_persistence" value="until_cleared" checked>
+                        Until Cleared
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="override_persistence" value="emergency_lock">
+                        🔒 Emergency Lock
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Language -->
+            <div class="form-group">
+                <label class="form-label">Languages</label>
+                <div class="lang-options">
+                    <label><input type="checkbox" name="override_lang" value="en" checked> EN</label>
+                    <label><input type="checkbox" name="override_lang" value="es" checked> ES</label>
+                    <label><input type="checkbox" name="override_lang" value="fr"> FR</label>
+                    <label><input type="checkbox" name="override_lang" value="zh"> ZH</label>
+                    <label><input type="checkbox" name="override_lang" value="vi"> VI</label>
+                </div>
+            </div>
+            
+            <!-- Audio -->
+            <div class="form-group">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="override_audio" checked> 
+                    🔊 Audio announcement
+                </label>
+            </div>
+            
+            <!-- Preview -->
+            <div class="message-preview critical" id="override-preview">
+                <div class="preview-label">Preview</div>
+                <div class="preview-content">OVERRIDE MESSAGE</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeOverrideModal()">Cancel</button>
+                <button type="submit" class="btn btn-danger">🚨 Send Override</button>
+            </div>
         </form>
     </div>
 </div>
 
-<div id="message-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-    <div class="card" style="max-width: 500px; width: 90%; margin: 0;">
-        <div class="card-header"><h2 class="card-title">📢 Send Message</h2><button onclick="closeMessageModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">×</button></div>
+<!-- Message Modal (Full Featured) -->
+<div id="message-modal" class="modal">
+    <div class="card modal-content" style="max-width: 600px;">
+        <div class="card-header">
+            <h2 class="card-title">📢 Send Message</h2>
+            <button onclick="closeMessageModal()" class="close-btn">×</button>
+        </div>
         <form id="message-form">
-            <div class="form-group"><label class="form-label">Message Content</label><textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea></div>
-            <div class="message-preview" id="message-preview">MESSAGE PREVIEW</div>
-            <div class="flex gap-2" style="justify-content: flex-end;"><button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button><button type="submit" class="btn btn-primary">Send Message</button></div>
+            <!-- Template Selection -->
+            <div class="form-group">
+                <label class="form-label">Template</label>
+                <select name="template_id" class="form-select" onchange="loadTemplate(this.value)">
+                    <option value="">-- Custom message --</option>
+                    <optgroup label="📅 Schedule">
+                        {% for tpl in templates if tpl.category == 'schedule' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="🧭 Wayfinding">
+                        {% for tpl in templates if tpl.category == 'wayfinding' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="📣 General">
+                        {% for tpl in templates if tpl.category in ['general', 'sponsor', 'attendee'] %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="⛈️ Weather">
+                        {% for tpl in templates if tpl.category == 'weather' %}
+                        <option value="{{ tpl.id }}">{{ tpl.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
+            
+            <!-- Message Content -->
+            <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea name="content" id="message-content" class="form-textarea" placeholder="Enter message..." required></textarea>
+            </div>
+            
+            <!-- Language -->
+            <div class="form-group">
+                <label class="form-label">Display Language</label>
+                <select name="language" class="form-select">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                </select>
+            </div>
+            
+            <!-- Target Selection -->
+            <div class="form-group">
+                <label class="form-label">Send To</label>
+                <div class="target-options">
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="all" checked onchange="updateTargetUI()">
+                        <span>📡 All Signs</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="zone" onchange="updateTargetUI()">
+                        <span>📍 By Zone</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="target_type" value="select" onchange="updateTargetUI()">
+                        <span>✅ Select</span>
+                    </label>
+                </div>
+                <div id="zone-selector" class="sub-selector" style="display: none;">
+                    <select name="target_zones" class="form-select" multiple>
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}">{{ zone.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div id="sign-selector" class="sub-selector" style="display: none;">
+                    <div class="checkbox-grid">
+                        {% for sign in signs %}
+                        <label class="checkbox-option">
+                            <input type="checkbox" name="target_signs" value="{{ sign.id }}">
+                            <span class="health-dot {{ sign.status }}"></span>
+                            {{ sign.name }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Priority -->
+            <div class="form-group">
+                <label class="form-label">Priority</label>
+                <div class="priority-selector">
+                    <label class="priority-option info">
+                        <input type="radio" name="priority" value="30" checked>
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span>ℹ️ Info</span>
+                        </span>
+                    </label>
+                    <label class="priority-option warning">
+                        <input type="radio" name="priority" value="75">
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span>⚠️ Warning</span>
+                        </span>
+                    </label>
+                    <label class="priority-option critical">
+                        <input type="radio" name="priority" value="95">
+                        <span class="priority-box">
+                            <span class="priority-color"></span>
+                            <span>🚨 Critical</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Duration -->
+            <div class="form-group">
+                <label class="form-label">Duration</label>
+                <div class="persistence-row">
+                    <label class="radio-inline">
+                        <input type="radio" name="persistence_mode" value="timed" checked onchange="updateDurationUI()">
+                        Timed
+                    </label>
+                    <label class="radio-inline">
+                        <input type="radio" name="persistence_mode" value="until_cleared" onchange="updateDurationUI()">
+                        Until Cleared
+                    </label>
+                </div>
+                <div id="duration-input" class="duration-group">
+                    <input type="number" name="duration_seconds" value="30" min="5" max="300" class="form-input duration-field">
+                    <span>seconds</span>
+                </div>
+            </div>
+            
+            <!-- Audio -->
+            <div class="form-group">
+                <label class="checkbox-inline">
+                    <input type="checkbox" name="audio_enabled" id="audio-checkbox"> 
+                    🔊 Audio announcement
+                </label>
+            </div>
+            
+            <!-- Preview -->
+            <div class="message-preview info" id="message-preview">
+                <div class="preview-label">Preview</div>
+                <div class="preview-content">MESSAGE PREVIEW</div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" onclick="closeMessageModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </div>
         </form>
     </div>
 </div>
+
+<style>
+/* Compact Stats Bar */
+.stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--gray-100);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+.stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.stat-mini .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+.stat-mini .stat-label {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+}
+.stat-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.stat-dot.online { background: #10B981; }
+.stat-dot.offline { background: #6B7280; }
+.stat-dot.warning { background: #F59E0B; }
+
+/* Actions Bar */
+.actions-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+/* Health Indicator */
+.health-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.health-indicator.online { background: #10B981; box-shadow: 0 0 6px #10B981; }
+.health-indicator.offline { background: #6B7280; }
+.health-indicator.warning { background: #F59E0B; box-shadow: 0 0 6px #F59E0B; }
+.health-indicator.error { background: #EF4444; box-shadow: 0 0 6px #EF4444; }
+
+.health-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.health-dot.online { background: #10B981; }
+.health-dot.offline { background: #6B7280; }
+
+/* Signs Table */
+.signs-table td {
+    vertical-align: middle;
+}
+.message-cell {
+    max-width: 200px;
+}
+.current-message {
+    font-size: 0.875rem;
+    color: var(--gray-700);
+}
+.no-message {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    font-style: italic;
+}
+
+/* Zone Badge */
+.zone-badge {
+    padding: 0.25rem 0.5rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.no-zone {
+    color: var(--gray-400);
+}
+
+/* Status Badge */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+.status-badge.online { background: #D1FAE5; color: #059669; }
+.status-badge.offline { background: #F3F4F6; color: #6B7280; }
+.status-badge.active { background: #D1FAE5; color: #059669; }
+.status-badge.pending { background: #FEF3C7; color: #D97706; }
+.status-badge.cleared { background: #F3F4F6; color: #6B7280; }
+
+/* Priority Row Colors */
+.message-row.priority-critical { border-left: 3px solid #DC2626; }
+.message-row.priority-warning { border-left: 3px solid #F59E0B; }
+.message-row.priority-info { border-left: 3px solid #10B981; }
+
+.priority-badge {
+    font-size: 1rem;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+}
+.modal-content {
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-500);
+}
+
+/* Target Options */
+.target-options {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+.radio-option:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+.radio-option input { display: none; }
+
+.sub-selector {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: 6px;
+}
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+}
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+.checkbox-option:hover { background: var(--gray-100); }
+
+/* Priority Selector */
+.priority-selector {
+    display: flex;
+    gap: 0.5rem;
+}
+.priority-option {
+    flex: 1;
+    cursor: pointer;
+}
+.priority-option input { display: none; }
+.priority-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border: 2px solid var(--gray-200);
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+.priority-option:has(input:checked) .priority-box { border-width: 2px; }
+.priority-option.info:has(input:checked) .priority-box { border-color: #10B981; background: #D1FAE5; }
+.priority-option.warning:has(input:checked) .priority-box { border-color: #F59E0B; background: #FEF3C7; }
+.priority-option.critical:has(input:checked) .priority-box { border-color: #DC2626; background: #FEE2E2; }
+.priority-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-bottom: 0.25rem;
+}
+.priority-option.info .priority-color { background: #10B981; }
+.priority-option.warning .priority-color { background: #F59E0B; }
+.priority-option.critical .priority-color { background: #DC2626; }
+
+/* Persistence */
+.persistence-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.radio-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+.duration-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+.duration-field {
+    width: 70px;
+    text-align: center;
+}
+
+/* Language Options */
+.lang-options {
+    display: flex;
+    gap: 1rem;
+}
+.lang-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+/* Preview */
+.message-preview {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    background: #1a1a1a;
+    border-radius: 6px;
+    text-align: center;
+}
+.preview-label {
+    font-size: 0.625rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+}
+.preview-content {
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.message-preview.info { border: 2px solid #10B981; }
+.message-preview.warning { border: 2px solid #F59E0B; }
+.message-preview.critical { border: 2px solid #DC2626; background: #2a0a0a; }
+
+/* Form */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+.checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>
 
 <script>
-function openOverrideModal() { document.getElementById('override-modal').style.display = 'flex'; }
-function closeOverrideModal() { document.getElementById('override-modal').style.display = 'none'; }
-function openMessageModal() { document.getElementById('message-modal').style.display = 'flex'; }
-function closeMessageModal() { document.getElementById('message-modal').style.display = 'none'; }
+// Override Modal
+function openOverrideModal() {
+    document.getElementById('override-modal').style.display = 'flex';
+}
+function closeOverrideModal() {
+    document.getElementById('override-modal').style.display = 'none';
+}
+function updateOverrideTargetUI() {
+    const type = document.querySelector('input[name="override_target_type"]:checked').value;
+    document.getElementById('override-zone-selector').style.display = type === 'zone' ? 'block' : 'none';
+    document.getElementById('override-sign-selector').style.display = type === 'select' ? 'block' : 'none';
+}
+function loadOverrideTemplate(templateId) {
+    if (!templateId) return;
+    fetch(`/api/templates/${templateId}`)
+        .then(r => r.json())
+        .then(tpl => {
+            document.getElementById('override-content').value = tpl.body || '';
+            document.querySelector('#override-preview .preview-content').textContent = tpl.body || 'OVERRIDE';
+        });
+}
 
-document.querySelector('#override-form textarea')?.addEventListener('input', function() { document.getElementById('override-preview').textContent = this.value || 'OVERRIDE MESSAGE PREVIEW'; });
-document.getElementById('message-content')?.addEventListener('input', function() { document.getElementById('message-preview').textContent = this.value || 'MESSAGE PREVIEW'; });
+document.getElementById('override-content')?.addEventListener('input', function() {
+    document.querySelector('#override-preview .preview-content').textContent = this.value || 'OVERRIDE';
+});
 
 document.getElementById('override-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(this);
-    await fetch('/api/override', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), priority: formData.get('priority') }) });
-    closeOverrideModal(); this.reset();
+    const targetType = formData.get('override_target_type');
+    
+    let targetSigns = ['all'];
+    let targetZones = [];
+    if (targetType === 'zone') {
+        targetZones = Array.from(this.querySelectorAll('[name="override_target_zones"] option:checked')).map(o => o.value);
+        targetSigns = [];
+    } else if (targetType === 'select') {
+        targetSigns = Array.from(this.querySelectorAll('[name="override_target_signs"]:checked')).map(cb => cb.value);
+    }
+    
+    const audioLangs = Array.from(this.querySelectorAll('[name="override_lang"]:checked')).map(cb => cb.value);
+    
+    const payload = {
+        content: formData.get('content'),
+        priority: parseInt(formData.get('override_priority')),
+        persistence_mode: formData.get('override_persistence'),
+        target_signs: targetSigns,
+        target_zones: targetZones,
+        audio_enabled: formData.get('override_audio') === 'on',
+        audio_languages: audioLangs
+    };
+    
+    try {
+        await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        closeOverrideModal();
+        location.reload();
+    } catch (err) {
+        alert('Failed to send: ' + err.message);
+    }
 });
+
+// Message Modal
+function openMessageModal(preselectedSign) {
+    document.getElementById('message-modal').style.display = 'flex';
+    if (preselectedSign) {
+        document.querySelector(`input[name="target_type"][value="select"]`).checked = true;
+        updateTargetUI();
+        document.querySelector(`input[name="target_signs"][value="${preselectedSign}"]`).checked = true;
+    }
+}
+function closeMessageModal() {
+    document.getElementById('message-modal').style.display = 'none';
+}
+function updateTargetUI() {
+    const type = document.querySelector('input[name="target_type"]:checked').value;
+    document.getElementById('zone-selector').style.display = type === 'zone' ? 'block' : 'none';
+    document.getElementById('sign-selector').style.display = type === 'select' ? 'block' : 'none';
+}
+function updateDurationUI() {
+    const mode = document.querySelector('input[name="persistence_mode"]:checked').value;
+    document.getElementById('duration-input').style.display = mode === 'timed' ? 'flex' : 'none';
+}
+function updatePreview() {
+    const content = document.getElementById('message-content').value || 'MESSAGE PREVIEW';
+    const priority = parseInt(document.querySelector('input[name="priority"]:checked')?.value || 30);
+    const preview = document.getElementById('message-preview');
+    preview.querySelector('.preview-content').textContent = content;
+    preview.className = 'message-preview';
+    if (priority >= 90) preview.classList.add('critical');
+    else if (priority >= 70) preview.classList.add('warning');
+    else preview.classList.add('info');
+}
+
+function loadTemplate(templateId) {
+    if (!templateId) return;
+    fetch(`/api/templates/${templateId}`)
+        .then(r => r.json())
+        .then(tpl => {
+            document.getElementById('message-content').value = tpl.body || '';
+            updatePreview();
+        });
+}
+
+document.getElementById('message-content')?.addEventListener('input', updatePreview);
+document.querySelectorAll('input[name="priority"]').forEach(r => r.addEventListener('change', updatePreview));
 
 document.getElementById('message-form').addEventListener('submit', async function(e) {
     e.preventDefault();
     const formData = new FormData(this);
-    await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: formData.get('content'), target_signs: ['all'] }) });
-    closeMessageModal(); this.reset();
+    const targetType = formData.get('target_type');
+    
+    let targetSigns = ['all'];
+    let targetZones = [];
+    if (targetType === 'zone') {
+        targetZones = Array.from(this.querySelectorAll('[name="target_zones"] option:checked')).map(o => o.value);
+        targetSigns = [];
+    } else if (targetType === 'select') {
+        targetSigns = Array.from(this.querySelectorAll('[name="target_signs"]:checked')).map(cb => cb.value);
+    }
+    
+    const payload = {
+        content: formData.get('content'),
+        priority: parseInt(formData.get('priority')),
+        persistence_mode: formData.get('persistence_mode'),
+        duration_seconds: parseInt(formData.get('duration_seconds')) || 30,
+        target_signs: targetSigns,
+        target_zones: targetZones,
+        audio_enabled: formData.get('audio_enabled') === 'on',
+        audio_languages: ['en']
+    };
+    
+    try {
+        await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        closeMessageModal();
+        location.reload();
+    } catch (err) {
+        alert('Failed to send: ' + err.message);
+    }
 });
 
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeOverrideModal(); closeMessageModal(); } });
+// Quick send from table
+function quickSend(signId, signName) {
+    openMessageModal(signId);
+}
+
+// Escape closes modals
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeOverrideModal();
+        closeMessageModal();
+    }
+});
 </script>
 {% endblock %}

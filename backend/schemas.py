@@ -130,12 +130,13 @@ class TemplateUpdate(BaseModel):
 # =============================================================================
 
 class MessageCreate(BaseModel):
-    event_id: str
+    event_id: Optional[str] = None
     template_id: Optional[str] = None
     content: Optional[str] = None
     target_signs: List[str] = ["all"]
     target_zones: List[str] = []
     priority: int = 10
+    persistence_mode: str = "timed"  # timed, until_cleared, emergency_lock
     audio_enabled: bool = False
     audio_languages: List[str] = ["en"]
     scheduled_at: Optional[datetime] = None
@@ -153,13 +154,14 @@ class MessageUpdate(BaseModel):
 
 class OverrideRequest(BaseModel):
     """Request to send an override message"""
-    event_id: str
+    event_id: Optional[str] = None
     template_id: Optional[str] = None
     content: Optional[str] = None
     target_signs: Optional[List[str]] = None  # None = all signs
     target_zones: Optional[List[str]] = None
     priority: int = Field(80, ge=1, le=100)
     mode: str = Field("insert", pattern="^(insert|replace|emergency)$")
+    persistence_mode: str = "until_cleared"  # timed, until_cleared, emergency_lock
     audio_enabled: bool = True
     audio_languages: List[str] = ["en", "es"]
     duration_seconds: Optional[int] = None  # None = until cancelled

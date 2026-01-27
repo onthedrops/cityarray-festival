@@ -242,6 +242,7 @@ class Message(Base):
     # Priority and override
     priority = Column(Integer, default=10)
     override_mode = Column(String(20))  # insert, replace, emergency
+    persistence_mode = Column(String(20), default="timed")  # timed, until_cleared, emergency_lock
     
     # Audio
     audio_enabled = Column(Boolean, default=False)
@@ -271,6 +272,7 @@ class Message(Base):
             "target_zones": self.target_zones,
             "priority": self.priority,
             "override_mode": self.override_mode,
+            "persistence_mode": self.persistence_mode,
             "audio_enabled": self.audio_enabled,
             "audio_languages": self.audio_languages,
             "status": self.status,
