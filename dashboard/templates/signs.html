@@ -38,18 +38,21 @@
     <table class="table">
         <thead>
             <tr>
+                <th></th>
                 <th>Name</th>
                 <th>Zone</th>
+                <th>Current Message</th>
                 <th>Status</th>
                 <th>Battery</th>
-                <th>Signal</th>
-                <th>Crowd</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for sign in signs %}
-            <tr data-sign-id="{{ sign.id }}">
+            <tr data-sign-id="{{ sign.id }}" class="sign-row" onclick="toggleSignDetails('{{ sign.id }}')">
+                <td class="expand-cell">
+                    <span class="expand-icon" id="expand-{{ sign.id }}">▶</span>
+                </td>
                 <td>
                     <strong>{{ sign.name }}</strong>
                     <br><small style="color: var(--gray-500);">{{ sign.id[:8] }}...</small>
@@ -66,6 +69,13 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if sign.current_message_id %}
+                        <span class="current-msg">📩 Active</span>
+                    {% else %}
+                        <span class="no-msg">—</span>
+                    {% endif %}
+                </td>
+                <td>
                     <span class="status-indicator {{ sign.status }}">
                         <span class="status-dot"></span>
                         {{ sign.status }}
@@ -77,11 +87,74 @@
                     </div>
                     <small>{{ sign.battery or 0 }}%</small>
                 </td>
-                <td>{{ sign.signal_strength or 0 }}%</td>
-                <td>{{ sign.crowd_count or 0 }}</td>
-                <td class="actions-cell">
-                    <button class="btn btn-sm btn-outline" onclick="editSign('{{ sign.id }}', '{{ sign.name }}', '{{ sign.zone_id or '' }}')">Edit</button>
+                <td class="actions-cell" onclick="event.stopPropagation()">
+                    <button class="btn btn-sm btn-outline" onclick="editSign('{{ sign.id }}', '{{ sign.name }}', '{{ sign.zone_id or '' }}', {{ sign.battery or 0 }}, {{ sign.signal_strength or 0 }}, '{{ sign.location or '' }}')">Edit</button>
                     <button class="btn btn-sm btn-primary" onclick="sendToSign('{{ sign.id }}')">Send</button>
+                </td>
+            </tr>
+            <!-- Expandable Details Row -->
+            <tr id="details-{{ sign.id }}" class="details-row" style="display: none;">
+                <td colspan="7">
+                    <div class="sign-details">
+                        <div class="details-grid">
+                            <div class="detail-section">
+                                <h4>📊 Metrics</h4>
+                                <div class="detail-item">
+                                    <span class="label">Signal Strength</span>
+                                    <span class="value">{{ sign.signal_strength or 0 }}%</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Crowd Count</span>
+                                    <span class="value">{{ sign.crowd_count or 0 }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Crowd Density</span>
+                                    <span class="value">{{ sign.crowd_density or 0 }}/m²</span>
+                                </div>
+                            </div>
+                            <div class="detail-section">
+                                <h4>🔧 Hardware</h4>
+                                <div class="detail-item">
+                                    <span class="label">Display Type</span>
+                                    <span class="value">{{ sign.display_type or 'LED' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Camera</span>
+                                    <span class="value">{{ '✅' if sign.has_camera else '❌' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Speaker</span>
+                                    <span class="value">{{ '✅' if sign.has_speaker else '❌' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Microphone</span>
+                                    <span class="value">{{ '✅' if sign.has_microphone else '❌' }}</span>
+                                </div>
+                            </div>
+                            <div class="detail-section">
+                                <h4>📍 Location</h4>
+                                <div class="detail-item">
+                                    <span class="label">Position</span>
+                                    <span class="value">{{ sign.location or 'Not set' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Coordinates</span>
+                                    <span class="value">{{ sign.position_x or '-' }}, {{ sign.position_y or '-' }}</span>
+                                </div>
+                            </div>
+                            <div class="detail-section">
+                                <h4>📋 Info</h4>
+                                <div class="detail-item">
+                                    <span class="label">Hardware ID</span>
+                                    <span class="value">{{ sign.hardware_id or 'N/A' }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="label">Last Update</span>
+                                    <span class="value">{{ sign.last_heartbeat[:16] if sign.last_heartbeat else 'Never' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
@@ -328,11 +401,89 @@
 .mb-4 {
     margin-bottom: 1rem;
 }
+
+/* Expandable Sign Details */
+.sign-row {
+    cursor: pointer;
+}
+.sign-row:hover {
+    background: var(--gray-50);
+}
+.expand-cell {
+    width: 30px;
+    text-align: center;
+}
+.expand-icon {
+    color: var(--gray-400);
+    font-size: 0.75rem;
+    transition: transform 0.2s;
+}
+.expand-icon.expanded {
+    transform: rotate(90deg);
+}
+.details-row {
+    background: var(--gray-50);
+}
+.sign-details {
+    padding: 1rem;
+}
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+}
+.detail-section h4 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+}
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    font-size: 0.8rem;
+}
+.detail-item .label {
+    color: var(--gray-500);
+}
+.detail-item .value {
+    font-weight: 500;
+}
+
+/* Current message indicators */
+.current-msg {
+    color: #059669;
+    font-size: 0.8rem;
+}
+.no-msg {
+    color: var(--gray-400);
+}
+
+@media (max-width: 900px) {
+    .details-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 </style>
 
 <script>
+// Toggle sign details row
+function toggleSignDetails(signId) {
+    const detailsRow = document.getElementById(`details-${signId}`);
+    const expandIcon = document.getElementById(`expand-${signId}`);
+    
+    if (detailsRow.style.display === 'none') {
+        detailsRow.style.display = 'table-row';
+        expandIcon.classList.add('expanded');
+    } else {
+        detailsRow.style.display = 'none';
+        expandIcon.classList.remove('expanded');
+    }
+}
+
 // Sign Modal
-function editSign(id, name, zoneId) {
+function editSign(id, name, zoneId, battery, signal, location) {
     document.getElementById('sign-id').value = id;
     document.getElementById('sign-name').value = name;
     document.getElementById('sign-zone').value = zoneId || '';

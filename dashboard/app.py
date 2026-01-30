@@ -286,9 +286,24 @@ async def process_message_ack(sign_id: str, message_id: str):
 
 # --- Signs ---
 @app.post("/api/signs", tags=["Signs"])
-async def register_sign(sign: SignCreate, db=Depends(get_db)):
+async def register_sign(sign: SignCreate, zone: str = None, db=Depends(get_db)):
     """Register a new sign"""
-    db_sign = Sign(**sign.model_dump())
+    sign_data = sign.model_dump()
+    
+    # If zone name provided (from simulator), look up or create zone
+    if zone and not sign_data.get('zone_id'):
+        existing_zone = db.query(Zone).filter(Zone.name == zone).first()
+        if existing_zone:
+            sign_data['zone_id'] = existing_zone.id
+        else:
+            # Create the zone
+            new_zone = Zone(name=zone, code=zone[:4].upper())
+            db.add(new_zone)
+            db.commit()
+            db.refresh(new_zone)
+            sign_data['zone_id'] = new_zone.id
+    
+    db_sign = Sign(**sign_data)
     db.add(db_sign)
     db.commit()
     db.refresh(db_sign)
@@ -431,12 +446,30 @@ async def send_message(message: MessageCreate, db=Depends(get_db)):
     db.commit()
     db.refresh(db_message)
     
+    # Determine actual target signs
+    actual_sign_ids = []
+    if "all" in message.target_signs:
+        # Get all sign IDs
+        all_signs = db.query(Sign).all()
+        actual_sign_ids = [s.id for s in all_signs]
+    elif message.target_zones:
+        # Get signs in specified zones
+        signs_in_zones = db.query(Sign).filter(Sign.zone_id.in_(message.target_zones)).all()
+        actual_sign_ids = [s.id for s in signs_in_zones]
+    else:
+        actual_sign_ids = message.target_signs
+    
     # Send to target signs
-    for sign_id in message.target_signs:
+    for sign_id in actual_sign_ids:
         await manager.send_to_sign(sign_id, {
             "type": "new_message",
             "data": db_message.to_dict()
         })
+    
+    # Update message status to active if signs received it
+    if actual_sign_ids:
+        db_message.status = "active"
+        db.commit()
     
     await manager.broadcast_to_dashboards({
         "type": "message_sent",

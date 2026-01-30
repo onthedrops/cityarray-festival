@@ -3,105 +3,375 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header"><h2 class="card-title">🧪 Sign Simulator</h2><p style="color: var(--gray-600);">Test the system without physical hardware</p></div>
+    <div class="card-header">
+        <h2 class="card-title">🧪 Sign Simulator</h2>
+        <p style="color: var(--gray-600);">Test the system without physical hardware</p>
+    </div>
+    
     <div class="grid grid-2">
+        <!-- Create Simulated Sign -->
         <div>
             <h3 class="mb-2" style="font-size: 1rem; font-weight: 600;">Create Simulated Sign</h3>
             <form id="create-sign-form">
-                <div class="form-group"><label class="form-label">Sign Name</label><input type="text" name="name" class="form-input" placeholder="Main Stage Sign" required></div>
-                <div class="form-group"><label class="form-label">Zone</label><input type="text" name="zone" class="form-input" placeholder="Main Stage"></div>
+                <div class="form-group">
+                    <label class="form-label">Sign Name</label>
+                    <input type="text" name="name" class="form-input" placeholder="Main Stage Sign" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Zone</label>
+                    <input type="text" name="zone" class="form-input" placeholder="Main Stage">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-input" placeholder="Stage Left Entrance">
+                </div>
                 <button type="submit" class="btn btn-primary">Create & Connect Sign</button>
             </form>
         </div>
+        
+        <!-- Quick Create -->
         <div>
             <h3 class="mb-2" style="font-size: 1rem; font-weight: 600;">Quick Create Fleet</h3>
-            <p style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.875rem;">Create multiple simulated signs at once.</p>
-            <button class="btn btn-outline mb-1" onclick="createFleet('festival', 5)">🎪 Create Festival Fleet (5 signs)</button><br>
-            <button class="btn btn-outline mb-1" onclick="createFleet('concert', 3)">🎸 Create Concert Fleet (3 signs)</button><br>
-            <button class="btn btn-outline" onclick="createFleet('sports', 4)">🏟️ Create Sports Fleet (4 signs)</button>
+            <p style="color: var(--gray-600); margin-bottom: 1rem; font-size: 0.875rem;">
+                Create multiple simulated signs at once for testing.
+            </p>
+            <button class="btn btn-outline mb-1" onclick="createFleet('festival', 5)">
+                🎪 Create Festival Fleet (5 signs)
+            </button>
+            <button class="btn btn-outline mb-1" onclick="createFleet('concert', 3)">
+                🎸 Create Concert Fleet (3 signs)
+            </button>
+            <button class="btn btn-outline" onclick="createFleet('sports', 4)">
+                🏟️ Create Sports Fleet (4 signs)
+            </button>
         </div>
     </div>
 </div>
 
+<!-- Active Simulated Signs -->
 <div class="card">
-    <div class="card-header"><h2 class="card-title">Active Simulated Signs</h2><span id="sim-count">0</span> running</div>
-    <div id="simulators-grid" class="grid grid-3"></div>
-    <div id="no-simulators" style="text-align: center; padding: 3rem; color: var(--gray-600);"><p style="font-size: 2rem; margin-bottom: 1rem;">🔌</p><p>No simulators running. Create one above to get started.</p></div>
+    <div class="card-header">
+        <h2 class="card-title">Active Simulated Signs</h2>
+        <span id="sim-count">0</span> running
+    </div>
+    
+    <div id="simulators-grid" class="grid grid-3">
+        <!-- Simulators will be added here -->
+    </div>
+    
+    <div id="no-simulators" style="text-align: center; padding: 3rem; color: var(--gray-600);">
+        <p style="font-size: 2rem; margin-bottom: 1rem;">🔌</p>
+        <p>No simulators running. Create one above to get started.</p>
+    </div>
 </div>
 
 <script>
-const simulators = new Map();
-
-document.getElementById('create-sign-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    await createSimulatedSign({ name: formData.get('name'), zone: formData.get('zone') });
-    this.reset();
-});
-
-async function createSimulatedSign(signData) {
-    const response = await fetch('/api/signs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: signData.name, zone: signData.zone || 'Default', display_type: 'led', status: 'offline' }) });
-    if (!response.ok) { alert('Failed to create sign'); return; }
-    const sign = await response.json();
-    const simulator = new SignSimulator(sign);
-    simulators.set(sign.id, simulator);
-    addSimulatorToGrid(sign, simulator);
-    updateSimCount();
-    simulator.connect();
-}
-
-function addSimulatorToGrid(sign, simulator) {
-    document.getElementById('no-simulators').style.display = 'none';
-    const div = document.createElement('div');
-    div.className = 'sign-card offline';
-    div.id = 'sim-' + sign.id;
-    div.innerHTML = '<div class="sign-header"><span class="sign-name">' + sign.name + '</span><span class="sign-status offline" id="sim-status-' + sign.id + '">connecting...</span></div>' +
-        '<div class="message-preview" id="sim-display-' + sign.id + '" style="font-size: 1rem; padding: 1rem; margin: 0.5rem 0;">READY</div>' +
-        '<div class="form-group"><label class="form-label">Battery %</label><input type="range" min="0" max="100" value="85" onchange="updateSimMetric(\'' + sign.id + '\', \'battery\', this.value)" style="width: 100%;"></div>' +
-        '<div class="form-group"><label class="form-label">Crowd Count</label><input type="range" min="0" max="500" value="50" onchange="updateSimMetric(\'' + sign.id + '\', \'crowd_count\', this.value)" style="width: 100%;"></div>' +
-        '<div class="flex gap-1 mt-2"><button class="btn btn-outline" onclick="simulators.get(\'' + sign.id + '\').disconnect()" style="flex:1;">Disconnect</button><button class="btn btn-danger" onclick="removeSimulator(\'' + sign.id + '\')" style="flex:1;">Remove</button></div>';
-    document.getElementById('simulators-grid').appendChild(div);
-}
-
-function updateSimMetric(signId, metric, value) { const sim = simulators.get(signId); if (sim) sim.metrics[metric] = parseFloat(value); }
-function removeSimulator(signId) { const sim = simulators.get(signId); if (sim) { sim.disconnect(); simulators.delete(signId); } document.getElementById('sim-' + signId)?.remove(); updateSimCount(); if (simulators.size === 0) document.getElementById('no-simulators').style.display = 'block'; }
-function updateSimCount() { document.getElementById('sim-count').textContent = simulators.size; }
-
-async function createFleet(type, count) {
-    const fleets = {
-        festival: [{ name: 'Main Stage', zone: 'Main Stage' }, { name: 'Food Court North', zone: 'Food Court' }, { name: 'Food Court South', zone: 'Food Court' }, { name: 'VIP Entrance', zone: 'VIP' }, { name: 'Medical Tent', zone: 'Services' }],
-        concert: [{ name: 'Stage Left', zone: 'Stage' }, { name: 'Stage Right', zone: 'Stage' }, { name: 'GA Entrance', zone: 'Entrance' }],
-        sports: [{ name: 'Section A', zone: 'Seating' }, { name: 'Section B', zone: 'Seating' }, { name: 'Concourse North', zone: 'Concourse' }, { name: 'Concourse South', zone: 'Concourse' }]
-    };
-    for (const sign of fleets[type].slice(0, count)) { await createSimulatedSign(sign); await new Promise(r => setTimeout(r, 500)); }
-}
-
-class SignSimulator {
-    constructor(sign) { this.sign = sign; this.ws = null; this.connected = false; this.heartbeatInterval = null; this.metrics = { battery: 85, signal_strength: 90, crowd_count: 50, crowd_density: 2.0 }; }
-    connect() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        this.ws = new WebSocket(protocol + '//' + window.location.host + '/ws/sign/' + this.sign.id);
-        this.ws.onopen = () => { this.connected = true; this.updateStatus('online'); this.startHeartbeat(); };
-        this.ws.onclose = () => { this.connected = false; this.updateStatus('offline'); this.stopHeartbeat(); };
-        this.ws.onmessage = (event) => { this.handleMessage(JSON.parse(event.data)); };
+    const simulators = new Map();
+    
+    // Create sign form handler
+    document.getElementById('create-sign-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const signData = {
+            name: formData.get('name'),
+            zone: formData.get('zone'),
+            location: formData.get('location')
+        };
+        await createSimulatedSign(signData);
+        this.reset();
+    });
+    
+    async function createSimulatedSign(signData) {
+        // Register sign with API - zone passed as query param for lookup/creation
+        const zoneParam = signData.zone ? `?zone=${encodeURIComponent(signData.zone)}` : '';
+        const response = await fetch(`/api/signs${zoneParam}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: signData.name,
+                location: signData.location || '',
+                display_type: 'led'
+            })
+        });
+        
+        if (!response.ok) {
+            alert('Failed to create sign');
+            return;
+        }
+        
+        const sign = await response.json();
+        
+        // Create simulator instance
+        const simulator = new SignSimulator(sign);
+        simulators.set(sign.id, simulator);
+        
+        // Add to grid
+        addSimulatorToGrid(sign, simulator);
+        updateSimCount();
+        
+        // Connect
+        simulator.connect();
     }
-    disconnect() { this.stopHeartbeat(); if (this.ws) this.ws.close(); }
-    startHeartbeat() { this.heartbeatInterval = setInterval(() => { if (this.connected) this.sendHeartbeat(); }, 5000); this.sendHeartbeat(); }
-    stopHeartbeat() { if (this.heartbeatInterval) clearInterval(this.heartbeatInterval); }
-    sendHeartbeat() { if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ type: 'heartbeat', data: this.metrics })); }
-    handleMessage(data) {
-        if (data.type === 'new_message' || data.type === 'override') {
-            const display = document.getElementById('sim-display-' + this.sign.id);
-            if (display) { display.textContent = data.data.content; display.style.background = data.type === 'override' ? '#D32F2F' : '#111'; display.style.color = data.type === 'override' ? '#FFF' : '#0F0'; }
-            if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ type: 'ack', message_id: data.data.id }));
+    
+    function addSimulatorToGrid(sign, simulator) {
+        document.getElementById('no-simulators').style.display = 'none';
+        
+        const div = document.createElement('div');
+        div.className = 'sign-card offline';
+        div.id = `sim-${sign.id}`;
+        div.innerHTML = `
+            <div class="sign-header">
+                <span class="sign-name">${sign.name}</span>
+                <span class="sign-status offline" id="sim-status-${sign.id}">connecting...</span>
+            </div>
+            
+            <!-- Display Preview -->
+            <div class="message-preview" id="sim-display-${sign.id}" style="font-size: 1rem; padding: 1rem; margin: 0.5rem 0;">
+                READY
+            </div>
+            
+            <!-- Simulated Metrics -->
+            <div class="form-group">
+                <label class="form-label">Battery %</label>
+                <input type="range" min="0" max="100" value="85" 
+                    onchange="updateSimMetric('${sign.id}', 'battery', this.value)"
+                    style="width: 100%;">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Crowd Count</label>
+                <input type="range" min="0" max="500" value="50"
+                    onchange="updateSimMetric('${sign.id}', 'crowd_count', this.value)"
+                    style="width: 100%;">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Crowd Density (per m²)</label>
+                <input type="range" min="0" max="10" value="2" step="0.5"
+                    onchange="updateSimMetric('${sign.id}', 'crowd_density', this.value)"
+                    style="width: 100%;">
+            </div>
+            
+            <div class="flex gap-1 mt-2">
+                <button class="btn btn-outline" onclick="simulators.get('${sign.id}').disconnect()" style="flex:1;">
+                    Disconnect
+                </button>
+                <button class="btn btn-danger" onclick="removeSimulator('${sign.id}')" style="flex:1;">
+                    Remove
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('simulators-grid').appendChild(div);
+    }
+    
+    function updateSimMetric(signId, metric, value) {
+        const sim = simulators.get(signId);
+        if (sim) {
+            sim.metrics[metric] = parseFloat(value);
         }
     }
-    updateStatus(status) {
-        const statusEl = document.getElementById('sim-status-' + this.sign.id);
-        const card = document.getElementById('sim-' + this.sign.id);
-        if (statusEl) { statusEl.textContent = status; statusEl.className = 'sign-status ' + status; }
-        if (card) card.className = 'sign-card ' + status;
+    
+    function removeSimulator(signId) {
+        const sim = simulators.get(signId);
+        if (sim) {
+            sim.disconnect();
+            simulators.delete(signId);
+        }
+        document.getElementById(`sim-${signId}`)?.remove();
+        updateSimCount();
+        
+        if (simulators.size === 0) {
+            document.getElementById('no-simulators').style.display = 'block';
+        }
     }
-}
+    
+    function updateSimCount() {
+        document.getElementById('sim-count').textContent = simulators.size;
+    }
+    
+    // Fleet creation
+    async function createFleet(type, count) {
+        const fleets = {
+            festival: [
+                { name: 'Main Stage', zone: 'Main Stage', location: 'Center' },
+                { name: 'Food Court North', zone: 'Food Court', location: 'North Entrance' },
+                { name: 'Food Court South', zone: 'Food Court', location: 'South Entrance' },
+                { name: 'VIP Entrance', zone: 'VIP', location: 'VIP Gate' },
+                { name: 'Medical Tent', zone: 'Services', location: 'Medical Station' }
+            ],
+            concert: [
+                { name: 'Stage Left', zone: 'Stage', location: 'Left Wing' },
+                { name: 'Stage Right', zone: 'Stage', location: 'Right Wing' },
+                { name: 'GA Entrance', zone: 'Entrance', location: 'Main Gate' }
+            ],
+            sports: [
+                { name: 'Section A', zone: 'Seating', location: 'Section A Entry' },
+                { name: 'Section B', zone: 'Seating', location: 'Section B Entry' },
+                { name: 'Concourse North', zone: 'Concourse', location: 'North' },
+                { name: 'Concourse South', zone: 'Concourse', location: 'South' }
+            ]
+        };
+        
+        const signs = fleets[type].slice(0, count);
+        for (const sign of signs) {
+            await createSimulatedSign(sign);
+            await new Promise(r => setTimeout(r, 500)); // Stagger creation
+        }
+    }
+    
+    // Sign Simulator Class
+    class SignSimulator {
+        constructor(sign) {
+            this.sign = sign;
+            this.ws = null;
+            this.connected = false;
+            this.heartbeatInterval = null;
+            this.metrics = {
+                battery: 85,
+                signal_strength: 90,
+                crowd_count: 50,
+                crowd_density: 2.0,
+                ambient_noise_db: 75
+            };
+        }
+        
+        connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.ws = new WebSocket(`${protocol}//${window.location.host}/ws/sign/${this.sign.id}`);
+            
+            this.ws.onopen = () => {
+                this.connected = true;
+                this.updateStatus('online');
+                this.startHeartbeat();
+                console.log(`Sign ${this.sign.id} connected`);
+            };
+            
+            this.ws.onclose = () => {
+                this.connected = false;
+                this.updateStatus('offline');
+                this.stopHeartbeat();
+                console.log(`Sign ${this.sign.id} disconnected`);
+            };
+            
+            this.ws.onerror = (err) => {
+                console.error(`Sign ${this.sign.id} error:`, err);
+            };
+            
+            this.ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                this.handleMessage(data);
+            };
+        }
+        
+        disconnect() {
+            this.stopHeartbeat();
+            if (this.ws) {
+                this.ws.close();
+            }
+        }
+        
+        startHeartbeat() {
+            this.heartbeatInterval = setInterval(() => {
+                if (this.connected) {
+                    this.sendHeartbeat();
+                }
+            }, 5000);
+            // Send immediately
+            this.sendHeartbeat();
+        }
+        
+        stopHeartbeat() {
+            if (this.heartbeatInterval) {
+                clearInterval(this.heartbeatInterval);
+            }
+        }
+        
+        sendHeartbeat() {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'heartbeat',
+                    data: this.metrics
+                }));
+            }
+        }
+        
+        handleMessage(data) {
+            console.log(`Sign ${this.sign.id} received:`, data);
+            
+            switch(data.type) {
+                case 'new_message':
+                    this.displayMessage(data.data);
+                    break;
+                case 'override':
+                    this.displayOverride(data.data);
+                    break;
+                case 'override_cancelled':
+                    this.clearOverride();
+                    break;
+            }
+        }
+        
+        displayMessage(message) {
+            const display = document.getElementById(`sim-display-${this.sign.id}`);
+            if (display) {
+                display.textContent = message.content;
+                display.style.background = '#111';
+                display.style.color = '#0F0';
+            }
+            
+            // Send acknowledgment
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({
+                    type: 'ack',
+                    message_id: message.id
+                }));
+            }
+        }
+        
+        displayOverride(message) {
+            const display = document.getElementById(`sim-display-${this.sign.id}`);
+            const card = document.getElementById(`sim-${this.sign.id}`);
+            
+            if (display) {
+                display.textContent = message.content;
+                display.style.background = message.priority === 'emergency' ? '#D32F2F' : '#F57C00';
+                display.style.color = '#FFF';
+            }
+            
+            if (card) {
+                card.style.borderColor = message.priority === 'emergency' ? '#D32F2F' : '#F57C00';
+            }
+        }
+        
+        clearOverride() {
+            const display = document.getElementById(`sim-display-${this.sign.id}`);
+            const card = document.getElementById(`sim-${this.sign.id}`);
+            
+            if (display) {
+                display.textContent = 'READY';
+                display.style.background = '#111';
+                display.style.color = '#0F0';
+            }
+            
+            if (card) {
+                card.style.borderColor = '#388E3C';
+            }
+        }
+        
+        updateStatus(status) {
+            const statusEl = document.getElementById(`sim-status-${this.sign.id}`);
+            const card = document.getElementById(`sim-${this.sign.id}`);
+            
+            if (statusEl) {
+                statusEl.textContent = status;
+                statusEl.className = `sign-status ${status}`;
+            }
+            
+            if (card) {
+                card.className = `sign-card ${status}`;
+            }
+        }
+    }
 </script>
 {% endblock %}

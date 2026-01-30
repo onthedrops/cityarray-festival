@@ -4,75 +4,393 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CITYARRAY Festival{% endblock %}</title>
+    
+    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/ws.js"></script>
+    
+    <!-- Minimal CSS - no framework needed -->
     <style>
-        :root { --primary: #1E3A5F; --accent: #2E7D32; --danger: #D32F2F; --warning: #F57C00; --success: #388E3C; --gray-100: #F5F5F5; --gray-200: #EEEEEE; --gray-300: #E0E0E0; --gray-600: #757575; --gray-800: #424242; }
+        :root {
+            --primary: #1E3A5F;
+            --accent: #2E7D32;
+            --danger: #D32F2F;
+            --warning: #F57C00;
+            --success: #388E3C;
+            --gray-100: #F5F5F5;
+            --gray-200: #EEEEEE;
+            --gray-300: #E0E0E0;
+            --gray-600: #757575;
+            --gray-800: #424242;
+        }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gray-100); color: var(--gray-800); line-height: 1.5; }
-        header { background: var(--primary); color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-        header h1 { font-size: 1.5rem; font-weight: 600; }
-        .status-badge { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gray-100);
+            color: var(--gray-800);
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
         .status-dot.offline { background: var(--danger); animation: none; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        nav { background: white; border-bottom: 1px solid var(--gray-300); padding: 0 2rem; display: flex; gap: 0; }
-        nav a { padding: 1rem 1.5rem; text-decoration: none; color: var(--gray-600); border-bottom: 3px solid transparent; font-weight: 500; transition: all 0.2s; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Navigation */
+        nav {
+            background: white;
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 2rem;
+            display: flex;
+            gap: 0;
+        }
+        
+        nav a {
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: var(--gray-600);
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
         nav a:hover { color: var(--primary); }
-        nav a.active { color: var(--primary); border-bottom-color: var(--primary); }
-        main { padding: 2rem; max-width: 1600px; margin: 0 auto; }
-        .card { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 1.5rem; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--gray-200); }
-        .card-title { font-size: 1.125rem; font-weight: 600; color: var(--primary); }
-        .grid { display: grid; gap: 1.5rem; }
+        nav a.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        /* Main Content */
+        main {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
         .grid-2 { grid-template-columns: repeat(2, 1fr); }
         .grid-3 { grid-template-columns: repeat(3, 1fr); }
         .grid-4 { grid-template-columns: repeat(4, 1fr); }
-        @media (max-width: 1200px) { .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 768px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
-        .stat { text-align: center; padding: 1rem; }
-        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
-        .stat-label { font-size: 0.875rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.05em; }
-        .sign-card { background: white; border-radius: 8px; padding: 1rem; border: 2px solid var(--gray-200); transition: all 0.2s; }
+        
+        @media (max-width: 1200px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 768px) {
+            .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+        
+        /* Stats */
+        .stat {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Sign Cards */
+        .sign-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            transition: all 0.2s;
+        }
+        
         .sign-card.online { border-color: var(--success); }
         .sign-card.offline { border-color: var(--danger); opacity: 0.7; }
-        .sign-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-        .sign-name { font-weight: 600; color: var(--gray-800); }
-        .sign-status { font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px; font-weight: 500; }
+        .sign-card.warning { border-color: var(--warning); }
+        
+        .sign-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .sign-name {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+        
+        .sign-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        
         .sign-status.online { background: #E8F5E9; color: var(--success); }
         .sign-status.offline { background: #FFEBEE; color: var(--danger); }
-        .sign-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.875rem; }
-        .sign-metric { display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid var(--gray-100); }
+        
+        .sign-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .sign-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        
         .sign-metric-label { color: var(--gray-600); }
         .sign-metric-value { font-weight: 500; }
-        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 6px; font-weight: 500; font-size: 0.875rem; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
         .btn-primary:hover { background: #152d4a; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-800); }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-danger:hover { background: #b71c1c; }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--gray-300);
+            color: var(--gray-800);
+        }
         .btn-outline:hover { background: var(--gray-100); }
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--gray-800); }
-        .form-input, .form-select, .form-textarea { width: 100%; padding: 0.625rem 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 0.875rem; }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.375rem;
+            color: var(--gray-800);
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 95, 0.1);
+        }
+        
         .form-textarea { resize: vertical; min-height: 100px; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
-        .table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-600); background: var(--gray-100); }
-        .message-preview { background: #111; color: #0F0; font-family: 'Courier New', monospace; padding: 2rem; border-radius: 8px; text-align: center; font-size: 1.5rem; font-weight: bold; margin: 1rem 0; }
+        
+        /* Tables */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th, .table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--gray-600);
+            background: var(--gray-100);
+        }
+        
+        .table tr:hover { background: var(--gray-100); }
+        
+        /* Alerts */
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .alert-success { background: #E8F5E9; color: var(--success); }
+        .alert-danger { background: #FFEBEE; color: var(--danger); }
+        .alert-warning { background: #FFF3E0; color: var(--warning); }
+        
+        /* Override Panel */
+        .override-panel {
+            background: #FFF3E0;
+            border: 2px solid var(--warning);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .override-panel.active {
+            background: #FFEBEE;
+            border-color: var(--danger);
+        }
+        
+        /* Message Preview */
+        .message-preview {
+            background: #111;
+            color: #0F0;
+            font-family: 'Courier New', monospace;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        /* Flex utilities */
         .flex { display: flex; }
         .flex-between { justify-content: space-between; }
         .flex-center { align-items: center; }
         .gap-1 { gap: 0.5rem; }
         .gap-2 { gap: 1rem; }
+        
+        /* Spacing */
         .mb-1 { margin-bottom: 0.5rem; }
         .mb-2 { margin-bottom: 1rem; }
         .mt-2 { margin-top: 1rem; }
-        #toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
-        .toast { padding: 1rem 1.5rem; border-radius: 6px; background: var(--gray-800); color: white; animation: slideIn 0.3s ease; }
+        
+        /* HTMX loading indicator */
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-indicator { display: none; }
+        
+        /* Toast notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .toast {
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            background: var(--gray-800);
+            color: white;
+            animation: slideIn 0.3s ease;
+        }
+        
         .toast.success { background: var(--success); }
         .toast.error { background: var(--danger); }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 <body hx-ext="ws" ws-connect="/ws/dashboard">
@@ -85,68 +403,140 @@
             <span id="signs-online">0</span> signs online
         </div>
     </header>
+    
     <nav>
         <a href="/" class="{% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
         <a href="/signs" class="{% if active_page == 'signs' %}active{% endif %}">Signs</a>
         <a href="/messages" class="{% if active_page == 'messages' %}active{% endif %}">Messages</a>
         <a href="/templates" class="{% if active_page == 'templates' %}active{% endif %}">Templates</a>
         <a href="/submissions" class="{% if active_page == 'submissions' %}active{% endif %}">Submissions</a>
-        <a href="/simulator" class="{% if active_page == 'simulator' %}active{% endif %}">🧪 Simulator</a>
+        <!-- Hidden: <a href="/simulator">🧪 Simulator</a> -->
     </nav>
-    <main>{% block content %}{% endblock %}</main>
+    
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
     <div id="toast-container"></div>
+    
     <script>
+        // WebSocket message handling
         document.body.addEventListener('htmx:wsAfterMessage', function(event) {
             const data = JSON.parse(event.detail.message);
             handleWebSocketMessage(data);
         });
+        
         function handleWebSocketMessage(data) {
-            if (data.type === 'sign_update') updateSignCard(data.data);
-            else if (data.type === 'sign_disconnected') { markSignOffline(data.sign_id); showToast('Sign ' + data.sign_id + ' disconnected', 'error'); }
-            else if (data.type === 'message_sent') showToast('Message sent to signs', 'success');
-            else if (data.type === 'override_activated') showToast('⚠️ Override activated!', 'error');
-            else if (data.type === 'new_submission') showToast('New submission awaiting moderation', 'success');
-            else if (data.type === 'all_signs') updateAllSigns(data.data);
+            switch(data.type) {
+                case 'sign_update':
+                    updateSignCard(data.data);
+                    break;
+                case 'sign_disconnected':
+                    markSignOffline(data.sign_id);
+                    showToast(`Sign ${data.sign_id} disconnected`, 'error');
+                    break;
+                case 'sign_registered':
+                    showToast(`New sign registered: ${data.data.name}`, 'success');
+                    location.reload(); // Refresh to show new sign
+                    break;
+                case 'message_sent':
+                    showToast('Message sent to signs', 'success');
+                    break;
+                case 'override_activated':
+                    showToast('⚠️ Override activated!', 'error');
+                    break;
+                case 'new_submission':
+                    showToast('New submission awaiting moderation', 'success');
+                    updatePendingCount();
+                    break;
+                case 'all_signs':
+                    updateAllSigns(data.data);
+                    break;
+            }
             updateStats();
         }
+        
         function updateSignCard(sign) {
-            const card = document.querySelector('[data-sign-id="' + sign.id + '"]');
+            const card = document.querySelector(`[data-sign-id="${sign.id}"]`);
             if (card) {
-                card.className = 'sign-card ' + sign.status;
+                card.className = `sign-card ${sign.status}`;
                 card.querySelector('.sign-status').textContent = sign.status;
-                card.querySelector('.sign-status').className = 'sign-status ' + sign.status;
+                card.querySelector('.sign-status').className = `sign-status ${sign.status}`;
+                
+                // Update metrics
+                const metrics = card.querySelectorAll('.sign-metric-value');
+                if (metrics[0]) metrics[0].textContent = `${sign.battery || 0}%`;
+                if (metrics[1]) metrics[1].textContent = `${sign.signal_strength || 0}%`;
+                if (metrics[2]) metrics[2].textContent = sign.crowd_count || 0;
+                if (metrics[3]) metrics[3].textContent = `${sign.crowd_density || 0}/m²`;
             }
         }
+        
         function markSignOffline(signId) {
-            const card = document.querySelector('[data-sign-id="' + signId + '"]');
-            if (card) { card.className = 'sign-card offline'; card.querySelector('.sign-status').textContent = 'offline'; }
+            const card = document.querySelector(`[data-sign-id="${signId}"]`);
+            if (card) {
+                card.className = 'sign-card offline';
+                card.querySelector('.sign-status').textContent = 'offline';
+                card.querySelector('.sign-status').className = 'sign-status offline';
+            }
         }
+        
         function updateAllSigns(signs) {
             const onlineCount = signs.filter(s => s.status === 'online').length;
             document.getElementById('signs-online').textContent = onlineCount;
         }
+        
         function updateStats() {
-            fetch('/api/status').then(r => r.json()).then(data => {
-                document.getElementById('signs-online').textContent = data.signs.online;
-                const statOnline = document.getElementById('stat-online');
-                const statOffline = document.getElementById('stat-offline');
-                if (statOnline) statOnline.textContent = data.signs.online;
-                if (statOffline) statOffline.textContent = data.signs.offline;
-            });
+            // Fetch and update stats
+            fetch('/api/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('signs-online').textContent = data.signs.online;
+                    const statOnline = document.getElementById('stat-online');
+                    const statOffline = document.getElementById('stat-offline');
+                    const statPending = document.getElementById('stat-pending');
+                    if (statOnline) statOnline.textContent = data.signs.online;
+                    if (statOffline) statOffline.textContent = data.signs.offline;
+                    if (statPending) statPending.textContent = data.submissions.pending;
+                });
         }
-        function showToast(message, type) {
+        
+        function updatePendingCount() {
+            const badge = document.getElementById('pending-count');
+            if (badge) {
+                badge.textContent = parseInt(badge.textContent || 0) + 1;
+            }
+        }
+        
+        function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = 'toast ' + type;
+            toast.className = `toast ${type}`;
             toast.textContent = message;
             container.appendChild(toast);
-            setTimeout(() => { toast.remove(); }, 3000);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
-        document.body.addEventListener('htmx:wsOpen', function() { document.getElementById('connection-status').classList.remove('offline'); document.getElementById('connection-text').textContent = 'Connected'; });
-        document.body.addEventListener('htmx:wsClose', function() { document.getElementById('connection-status').classList.add('offline'); document.getElementById('connection-text').textContent = 'Disconnected'; });
+        
+        // Request all signs on connect
+        document.body.addEventListener('htmx:wsOpen', function() {
+            document.getElementById('connection-status').classList.remove('offline');
+            document.getElementById('connection-text').textContent = 'Connected';
+        });
+        
+        document.body.addEventListener('htmx:wsClose', function() {
+            document.getElementById('connection-status').classList.add('offline');
+            document.getElementById('connection-text').textContent = 'Disconnected';
+        });
+        
+        // Initial stats load
         updateStats();
-        setInterval(updateStats, 30000);
+        setInterval(updateStats, 30000); // Update every 30s
     </script>
+    
     {% block scripts %}{% endblock %}
 </body>
 </html>

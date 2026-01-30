@@ -74,7 +74,7 @@ class Zone(Base):
     __tablename__ = "zones"
     
     id = Column(String(36), primary_key=True, default=generate_uuid)
-    event_id = Column(String(36), ForeignKey("events.id"), nullable=False)
+    event_id = Column(String(36), ForeignKey("events.id"), nullable=True)
     name = Column(String(100), nullable=False)
     code = Column(String(10))  # Short code like "A", "B", "MAIN"
     color = Column(String(7))  # Hex color for map display

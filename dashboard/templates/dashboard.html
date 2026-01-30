@@ -118,33 +118,38 @@
             <tr>
                 <th>Time</th>
                 <th>Content</th>
-                <th>Priority</th>
-                <th>Targets</th>
+                <th>Sign</th>
+                <th>Zone</th>
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="messages-tbody">
             {% for msg in messages[:5] %}
-            <tr class="message-row priority-{{ 'critical' if msg.priority >= 90 else 'warning' if msg.priority >= 70 else 'info' }}">
+            <tr class="message-row priority-{{ 'critical' if msg.priority >= 90 else 'warning' if msg.priority >= 70 else 'info' }}" data-message-id="{{ msg.id }}" data-persistence="{{ msg.persistence_mode }}" data-duration="{{ msg.duration_seconds }}" data-created="{{ msg.created_at }}">
                 <td>{{ msg.created_at[11:16] if msg.created_at else '-' }}</td>
-                <td>{{ msg.content[:40] }}{% if msg.content and msg.content|length > 40 %}...{% endif %}</td>
-                <td>
-                    {% if msg.priority >= 90 %}
-                    <span class="priority-badge critical">🚨</span>
-                    {% elif msg.priority >= 70 %}
-                    <span class="priority-badge warning">⚠️</span>
-                    {% else %}
-                    <span class="priority-badge info">ℹ️</span>
-                    {% endif %}
-                </td>
+                <td title="{{ msg.content }}">{{ msg.content[:35] }}{% if msg.content and msg.content|length > 35 %}...{% endif %}</td>
                 <td>
                     {% if msg.target_signs and 'all' in msg.target_signs %}
-                    All
+                        <span class="target-badge all">📡 All</span>
+                    {% elif msg.target_signs %}
+                        <span class="target-badge signs">{{ msg.target_signs|length }} sign{{ 's' if msg.target_signs|length > 1 else '' }}</span>
                     {% else %}
-                    {{ msg.target_signs|length if msg.target_signs else 0 }}
+                        —
                     {% endif %}
                 </td>
-                <td><span class="status-badge {{ msg.status }}">{{ msg.status }}</span></td>
+                <td>
+                    {% if msg.target_zones %}
+                        <span class="target-badge zones">📍 {{ msg.target_zones|length }} zone{{ 's' if msg.target_zones|length > 1 else '' }}</span>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="status-badge {{ msg.status }}">{{ msg.status }}</span>
+                    {% if msg.persistence_mode == 'timed' and msg.status == 'active' %}
+                    <span class="countdown" data-msg-id="{{ msg.id }}"></span>
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -570,6 +575,30 @@
     font-size: 1rem;
 }
 
+/* Target Badges */
+.target-badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+.target-badge.all { background: #DBEAFE; color: #1D4ED8; }
+.target-badge.signs { background: #E0E7FF; color: #4338CA; }
+.target-badge.zones { background: #FCE7F3; color: #BE185D; }
+
+/* Countdown */
+.countdown {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.125rem 0.375rem;
+    background: #FEF3C7;
+    color: #92400E;
+    border-radius: 3px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Modal */
 .modal {
     display: none;
@@ -911,5 +940,33 @@ document.addEventListener('keydown', function(e) {
         closeMessageModal();
     }
 });
+
+// Countdown timers for timed messages
+function updateCountdowns() {
+    document.querySelectorAll('.countdown[data-msg-id]').forEach(el => {
+        const row = el.closest('tr');
+        const created = row.dataset.created;
+        const duration = parseInt(row.dataset.duration) || 30;
+        
+        if (created) {
+            const createdTime = new Date(created).getTime();
+            const now = Date.now();
+            const elapsed = Math.floor((now - createdTime) / 1000);
+            const remaining = duration - elapsed;
+            
+            if (remaining > 0) {
+                el.textContent = `${remaining}s`;
+            } else {
+                el.textContent = 'expired';
+                el.style.background = '#F3F4F6';
+                el.style.color = '#6B7280';
+            }
+        }
+    });
+}
+
+// Update countdowns every second
+setInterval(updateCountdowns, 1000);
+updateCountdowns();
 </script>
 {% endblock %}
